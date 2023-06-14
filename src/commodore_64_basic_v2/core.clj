@@ -633,7 +633,17 @@
 ; user=> (palabra-reservada? 'SPACE)
 ; false
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn palabra-reservada? [x])
+(defn palabra-reservada?
+  [x]
+  (contains?
+   #{'ABS 'AND 'ASC 'ATN 'CLOSE 'CLR 'CMD 'CONT 'COS 'DATA 'DEF 'DIM
+     'END 'EXP 'FN 'FOR 'FRE 'GET 'GET# 'GOSUB 'GOTO 'IF 'INPUT 'INPUT# 'INT
+     'LEFT$ 'LEN 'LET 'LIST 'LOAD 'LOG 'MID$ 'MID3$ 'NEW 'NEXT 'NOT 'ON 'OPEN 'OR
+     'PEEK 'POKE 'POS 'PRINT 'PRINT# 'READ 'REM 'RESTORE 'RETURN 'RIGHT$ 'RND
+     'RUN 'SAVE 'SGN 'SIN 'SPC 'SQR 'STATUS 'STEP 'STOP 'STR$ 'SYS 'TAB 'TAN
+     'THEN 'TIME 'TIME$ 'TO 'USR 'VAL 'VERIFY 'WAIT}
+   x))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; operador?: predicado para determinar si un identificador es un
@@ -645,7 +655,12 @@
 ; user=> (operador? (symbol "%"))
 ; false
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn operador? [x])
+(defn operador?
+  [x]
+  (contains?
+   #{'+ '- '* '/ '< '> '<= '=  '=> '<> '↑}
+   x))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; anular-invalidos: recibe una lista de simbolos y la retorna con
@@ -653,7 +668,60 @@
 ; user=> (anular-invalidos '(IF X & * Y < 12 THEN LET ! X = 0))
 ; (IF X nil * Y < 12 THEN LET nil X = 0)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn anular-invalidos [sentencia])
+(defn sumar-si-es-numero
+  [cantidad simbolo]
+  (if (nil? (re-find #"\d+" (str (first simbolo)))) cantidad (+ cantidad 1)))
+
+(defn recorrer-simbolo-numero
+  [cantidad simbolo]
+  (if (empty? simbolo)
+    cantidad
+    (recorrer-simbolo-numero
+     (sumar-si-es-numero cantidad simbolo)
+     (drop 1 simbolo))))
+
+(defn cantidad-numeros
+  [simbolo]
+  (recorrer-simbolo-numero 0 (str simbolo)))
+
+(defn sumar-si-es-letra
+  [cantidad simbolo]
+  (if (nil? (re-find #"[a-zA-Z]" (str (first simbolo)))) cantidad (+ cantidad 1)))
+
+(defn recorrer-simbolo-letra
+  [cantidad simbolo]
+  (if (empty? simbolo)
+    cantidad
+    (recorrer-simbolo-letra
+     (sumar-si-es-letra cantidad simbolo)
+     (drop 1 simbolo))))
+
+(defn cantidad-letras
+  [simbolo]
+  (recorrer-simbolo-letra 0 (str simbolo)))
+
+(defn variable-valida?
+  [simbolo]
+  (cond
+    (palabra-reservada? simbolo) false
+    (operador? simbolo) false
+    (= (sumar-si-es-letra 0 (str simbolo)) 0) false
+    (not (= (count (str simbolo)) (+ (cantidad-letras simbolo) (cantidad-numeros simbolo)))) false
+    :else true))
+
+(defn simbolo-valido?
+  [simbolo]
+  (cond
+    (palabra-reservada? simbolo) true
+    (operador? simbolo) true
+    (number? simbolo) true
+    (variable-valida? simbolo) true
+    :else false))
+
+(defn anular-invalidos
+  [sentencia]
+  (map (fn [x] (if (simbolo-valido? x) x nil)) sentencia))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; cargar-linea: recibe una linea de codigo y un ambiente y retorna
@@ -667,7 +735,9 @@
 ; user=> (cargar-linea '(15 (X = X - 1)) ['((10 (PRINT X)) (15 (X = X + 1)) (20 (X = 100))) [:ejecucion-inmediata 0] [] [] [] 0 {}])
 ; [((10 (PRINT X)) (15 (X = X - 1)) (20 (X = 100))) [:ejecucion-inmediata 0] [] [] [] 0 {}]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn cargar-linea [linea amb])
+(defn cargar-linea
+  [linea amb]
+  (apply vector (cons (sort-by first (concat (first (take 1 amb)) (list linea))) (drop 1 amb))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; expandir-nexts: recibe una lista de sentencias y la devuelve con
@@ -680,7 +750,45 @@
 ; user=> (expandir-nexts n)
 ; ((PRINT 1) (NEXT A) (NEXT B))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn expandir-nexts [n])
+(require '[clojure.string :as str])
+
+(defn tiene-next?
+  [sentencia]
+  (if (= (first sentencia) 'NEXT) true false))
+
+(defn es-next-anidada?
+  [sentencia]
+  (> (count (drop 1 (str/split (apply str (drop-last (drop 1 (str sentencia)))) #" "))) 1))
+(es-next-anidada? '(NEXT A , B))
+(str '(NEXT A , B))
+(count (str '(NEXT A , B)))
+
+(defn sentencias-contiene-next?
+  [sentencias]
+  (some (fn [sentencia] (tiene-next? sentencia)) sentencias))
+
+(defn obtener-simbolos
+  [sentencia]
+  (map symbol (drop 1 (str/split (apply str (drop-last (drop 1 (str sentencia)))) #" "))))
+
+(defn expando
+  [sentencia]
+  (map (fn [simbolo] (cons 'NEXT (list simbolo))) (filter (fn [x] (not (= x (symbol ",")))) (obtener-simbolos sentencia))))
+
+(defn expandirlos
+  [sentencias]
+  (map (fn [sentencia] (if (and (tiene-next? sentencia) (es-next-anidada? sentencia)) (expando sentencia) sentencia)) sentencias))
+
+(defn separarlos
+  [nueva-lista sentencias]
+  (if (= (count sentencias) 0) nueva-lista (if (symbol? (first (first sentencias)))
+                                             (separarlos (concat nueva-lista (list (first sentencias))) (drop 1 sentencias))
+                                             (separarlos (concat nueva-lista (reduce (fn [acc x] (concat acc (list x))) '() (first sentencias))) (drop 1 sentencias)))))
+
+(defn expandir-nexts
+  [n]
+  (if (sentencias-contiene-next? n) (separarlos '() (expandirlos n)) n))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; dar-error: recibe un error (codigo o mensaje) y el puntero de 
@@ -699,7 +807,14 @@
 ;
 ; ?ERROR DISK FULL IN 100nil
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn dar-error [cod prog-ptrs])
+(defn dar-error
+  [cod prog-ptrs]
+  (cond
+    (and (number? cod) (= cod '16) (not (number? (first prog-ptrs)))) (format "?SYNTAX ERROR")
+    (and (not (number? cod)) (not (number? (first prog-ptrs)))) (format "%s" cod)
+    (and (number? cod) (= cod '16) (number? (first prog-ptrs))) (format "?SYNTAX ERROR IN %s" (str (first prog-ptrs)))
+    :else (format "%s IN %s" cod (str (first prog-ptrs)))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; variable-float?: predicado para determinar si un identificador
@@ -711,7 +826,9 @@
 ; user=> (variable-float? 'X$)
 ; false
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn variable-float? [x])
+(defn variable-float?
+  [x]
+  (if (and (not (variable-integer? x)) (not (variable-string? x))) true  false))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; variable-integer?: predicado para determinar si un identificador
@@ -723,7 +840,9 @@
 ; user=> (variable-integer? 'X$)
 ; false
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn variable-integer? [x])
+(defn variable-integer?
+  [x]
+  (if (= '"%" (str (last (str x)))) true  false))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; variable-string?: predicado para determinar si un identificador
@@ -735,7 +854,9 @@
 ; user=> (variable-string? 'X%)
 ; false
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn variable-string? [x])
+(defn variable-string?
+  [x]
+  (if (= '"$" (str (last (str x)))) true  false))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; contar-sentencias: recibe un numero de linea y un ambiente y
@@ -748,7 +869,21 @@
 ; user=> (contar-sentencias 20 [(list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [10 1] [] [] [] 0 {}])
 ; 2
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn contar-sentencias [nro-linea amb])
+(defn obtener-sentencia
+  [sentencia-a-devolver sentencias nro]
+  (if (= (count sentencias) 0)
+    (if (= (count sentencia-a-devolver) 0) '() sentencia-a-devolver)
+    (obtener-sentencia
+     (if (= (first (first sentencias)) nro) (first sentencias) sentencia-a-devolver)
+     (drop 1 sentencias)
+     nro)))
+
+
+(defn contar-sentencias
+  [nro-linea amb]
+  (if (empty? (obtener-sentencia '() (first amb) nro-linea))
+    nil
+    (count (expandir-nexts (drop 1 (obtener-sentencia '() (first amb) nro-linea))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; buscar-lineas-restantes: recibe un ambiente y retorna la
@@ -782,7 +917,38 @@
 ; user=> (buscar-lineas-restantes [(list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [25 0] [] [] [] 0 {}])
 ; nil
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn buscar-lineas-restantes [amb])
+(defn obtener-puntero
+  [amb]
+  (nth amb 1))
+
+(defn obtener-linea
+  [amb]
+  (first (obtener-puntero amb)))
+
+(defn obtener-restantes
+  [amb]
+  (if (neg-int? (second (obtener-puntero amb))) 0 (second (obtener-puntero amb))))
+
+(defn linea-esta?
+  [linea-buscada sentencias]
+  (some (fn [sentencia] (= (first sentencia) linea-buscada)) sentencias))
+
+(defn manipular-sentencia
+  [amb sentencia]
+  (cond
+    (> (first sentencia) (obtener-linea amb)) sentencia
+    (< (first sentencia) (obtener-linea amb)) nil
+    (zero? (obtener-restantes amb)) (list (obtener-linea amb))
+    :else (concat (list (first sentencia)) (drop (- (count (apply list (expandir-nexts (drop 1 sentencia)))) (obtener-restantes amb)) (apply list (expandir-nexts (drop 1 sentencia)))))))
+
+(defn buscar-lineas-restantes
+  [amb]
+  (cond
+    (empty? (obtener-puntero amb)) nil
+    (not (number? (first (obtener-puntero amb)))) nil
+    (nil? (linea-esta? (obtener-linea amb) (first amb))) nil
+    :else (filter (fn [x] (not (nil? x))) (map (partial manipular-sentencia amb) (first amb)))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; continuar-linea: implementa la sentencia RETURN, retornando una
@@ -806,7 +972,22 @@
 ; user=> (extraer-data (list '(10 (PRINT X) (REM ESTE NO) (DATA 30)) '(20 (DATA HOLA)) (list 100 (list 'DATA 'MUNDO (symbol ",") 10 (symbol ",") 20))))
 ; ("HOLA" "MUNDO" 10 20)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn extraer-data [prg])
+(defn recorrer-prg
+  [lista-a-devolver prg]
+  (if (empty? prg)
+    lista-a-devolver
+    (recorrer-prg
+     (if (and (= (count (first prg)) 2) (= (first (second (first prg))) 'DATA))
+       (concat lista-a-devolver (drop 1 (second (first prg))))
+       lista-a-devolver)
+     (drop 1 prg))))
+
+(defn extraer-data
+  [prg]
+  (if (empty? (first prg))
+    (first prg)
+    (recorrer-prg '() prg)))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; ejecutar-asignacion: recibe una asignacion y un ambiente, y
@@ -821,7 +1002,66 @@
 ; user=> (ejecutar-asignacion '(X$ = X$ + " MUNDO") ['((10 (PRINT X))) [10 1] [] [] [] 0 '{X$ "HOLA"}])
 ; [((10 (PRINT X))) [10 1] [] [] [] 0 {X$ "HOLA MUNDO"}]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn ejecutar-asignacion [sentencia amb])
+(defn potencia
+  [numero elevado]
+  (if (zero? elevado) 1 (* numero (potencia numero (- elevado 1)))))
+
+(defn aplicar-operacion-numero
+  [operador valor1 valor2]
+  (cond
+    (= operador "+") (+ valor1 valor2)
+    (= operador "-") (- valor1 valor2)
+    (= operador "*") (* valor1 valor2)
+    (= operador "/") (/ valor1 valor2)
+    (= operador "-") (- valor1 valor2)
+    (= operador "↑") (potencia valor1 valor2)
+    :else nil))
+
+(defn obtener-variable
+  [sentencia]
+  (symbol (first (str/split (apply str (drop-last (drop 1 (str sentencia)))) #" "))))
+
+(obtener-variable  '(X = 5))
+
+(defn obtener-valor
+  [sentencia]
+  (symbol (last (str/split (apply str (drop-last (drop 1 (str sentencia)))) #"="))))
+(obtener-valor '(X$ = "HOLA MUNDO"))
+(obtener-valor  '(X = 5))
+
+(defn obtener-valor-string
+  [sentencia]
+  (last sentencia))
+
+(obtener-valor-string '(X$ = X$ + 5))
+
+(defn obtener-operador
+  [sentencia]
+  (nth (str/split (apply str (drop-last (drop 1 (str sentencia)))) #" ") 3))
+
+(nth (obtener-operador  '(X$ = X$ + 5)) 3)
+
+(defn colocar-el-ambiente
+  [sentencia amb]
+  (conj (apply  vector (drop-last amb)) (assoc (last amb) (obtener-variable sentencia) (obtener-valor sentencia))))
+
+(defn armar-sentencia
+  [sentencia amb]
+  (cond
+    (= (count sentencia) 3) sentencia
+    (= (str (last (str (obtener-variable sentencia)))) "$") (concat (list (obtener-variable sentencia))
+                                                                    '(=)
+                                                                    (list (apply str (concat (get (last amb) (obtener-variable sentencia)) (obtener-valor-string sentencia)))))
+    :else (concat (list (obtener-variable sentencia))
+                  '(=)
+                  (list (aplicar-operacion-numero (obtener-operador sentencia) (get (last amb) (obtener-variable sentencia)) (obtener-valor-string sentencia))))))
+
+(defn ejecutar-asignacion
+  [sentencia amb]
+  (if (contains? (last amb) (obtener-variable sentencia))
+    (colocar-el-ambiente (apply list (armar-sentencia sentencia amb)) amb)
+    (colocar-el-ambiente sentencia amb)))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; preprocesar-expresion: recibe una expresion y la retorna con
@@ -832,7 +1072,29 @@
 ; user=> (preprocesar-expresion '(X + . / Y% * Z) ['((10 (PRINT X))) [10 1] [] [] [] 0 '{X 5 Y% 2}])
 ; (5 + 0 / 2 * 0)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn preprocesar-expresion [expr amb])
+(defn obtener-variables-amb
+  [amb]
+  (last amb))
+
+(defn pertenece-variable-al-amb?
+  [variable amb]
+  (contains? (obtener-variables-amb amb) variable))
+
+(defn reemplazar-variable-no-existente
+  [variable]
+  (if (= (str (last (str variable))) "$") "" 0))
+
+(defn verificar-reemplazo
+  [variable amb]
+  (cond
+    (not (symbol? variable)) variable
+    (pertenece-variable-al-amb? variable amb) (get (obtener-variables-amb amb) variable)
+    :else (reemplazar-variable-no-existente variable)))
+
+(defn preprocesar-expresion
+  [expr amb]
+  (map (fn [x] (if (operador? x) x (verificar-reemplazo x amb))) expr))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; desambiguar: recibe un expresion y la retorna sin los + unarios,
@@ -847,7 +1109,9 @@
 ; user=> (desambiguar (list 'MID$ (symbol "(") 1 (symbol ",") '- 2 '+ 'K (symbol ",") 3 (symbol ")")))
 ; (MID3$ ( 1 , -u 2 + K , 3 ))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn desambiguar [expr])
+(defn desambiguar
+  [expr]
+  (desambiguar-mid (desambiguar-mas-menos expr)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; precedencia: recibe un token y retorna el valor de su
@@ -863,7 +1127,38 @@
 ; user=> (precedencia 'MID$)
 ; 8
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn precedencia [token])
+(defn lista-contiene
+  [palabra caracter]
+  (contains? (into #{} (map str palabra)) caracter))
+
+(defn es-negacion?
+  [token]
+  (lista-contiene token '"-"))
+
+(defn operacion-relacional?
+  [token]
+  (cond
+    (= token "<") true
+    (= token ">") true
+    (= token "=") true
+    (= token "<=") true
+    (= token ">=") true
+    :else false))
+
+(defn precedencia
+  [token]
+  (cond
+    (= token 'OR) 1
+    (= token 'AND) 2
+    (= token 'NOT) 3
+    (operacion-relacional? (str token)) 4
+    (or (= token '+) (= token '-)) 5
+    (or (= token '*) (= token '/)) 6
+    (es-negacion? token) 7
+    (= token '↑) 8
+    (palabra-reservada? (str token)) 8
+    :else -1))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; aridad: recibe un token y retorna el valor de su aridad, por
@@ -879,7 +1174,15 @@
 ; user=> (aridad 'MID3$)
 ; 3
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn aridad [token])
+(defn aridad
+  [token]
+  (get {'ABS 1 'AND 2 'ASC 1 'ATN 1 'CLOSE 1 'CLR 0 'CMD 1 'CONT 0 'COS 1 'DATA 1 'DEF 1
+        'DIM 1 'END 0 'EXP 1 'FN 1 'FOR 3 'FRE 1 'GET 1 'GET# 2 'GOSUB 1 'GOTO 1 'IF 2 'INPUT 1 'INPUT# 2 'INT 1
+        'LEFT$ 2 'LEN 1 'LET 2 'LIST 1 'LOAD 1 'LOG 1 'MID$ 2 'MID3$ 3 'NEW 0 'NEXT 0 'NOT 1 'ON 1 'OPEN 2 'OR 2
+        'PEEK 2 'POKE 2 'POS 1  'PRINT 1 'PRINT# 2 'READ 1  'REM 1 'RESTORE 0 'RETURN 0 'RIGHT$ 2 'RND 1
+        'RUN 1 'SAVE 2 'SGN 1 'SIN 1 'SPC 1 'SQR 1 'STATUS 0 'STEP 0 'STOP 0 'STR$ 1 'SYS 1 'TAB 1 'TAN 1
+        'THEN 0 'TIME 0 'TIME$ 0 'TO 0 'USR 1 'VAL 1 'VERIFY 0 'WAIT 2 '+ 2 '- 2 '* 2 '/ 2 '↑ 2 '< 2 '<= 2 '= 2 '> 2 '=> 2 '<> 2}
+       token))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; eliminar-cero-decimal: recibe un numero y lo retorna sin ceros
@@ -893,7 +1196,41 @@
 ; user=> (eliminar-cero-decimal 'A)
 ; A
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn eliminar-cero-decimal [n])
+(defn es-entero?
+  [simbolo]
+  (if (= (count (re-find #"\d+" (str simbolo))) (count (str simbolo))) true false))
+
+(defn obtener-entero
+  [numero]
+  (Integer/parseInt (first (str/split (str numero) #"[.]"))))
+
+(defn obtener-decimales
+  [numero]
+  (Integer/parseInt (last (str/split (str numero) #"[.]"))))
+
+(defn recorrer-numero
+  [cantidad-innecesario numero]
+  (if (or (empty? numero) (= (str (first numero)) ".") (not (= (str (first numero)) "0")))
+    cantidad-innecesario
+    (recorrer-numero (+ cantidad-innecesario 1) (drop 1 numero))))
+
+(defn sacar-innecesarios
+  [numero]
+  (apply str (drop-last (recorrer-numero 0 (reverse (str numero))) (str numero))))
+
+(defn armar-numero
+  [numero]
+  (if (zero? (count (sacar-innecesarios (obtener-decimales (str numero)))))
+    (obtener-entero numero)
+    (Float/parseFloat (format "%s.%s" (str (obtener-entero numero)) (sacar-innecesarios (obtener-decimales (str numero)))))))
+
+(defn eliminar-cero-decimal
+  [n]
+  (cond
+    (symbol? n) n
+    (es-entero? n) n
+    :else (armar-numero n)))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; eliminar-cero-entero: recibe un simbolo y lo retorna convertido
@@ -918,7 +1255,34 @@
 ; user=> (eliminar-cero-entero -0.5)
 ; "-.5"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn eliminar-cero-entero [n])
+(defn es-flotante?
+  [numero-string]
+  (some (fn [caracter] (= (str caracter) ".")) numero-string))
+
+(defn es-negativo?
+  [numero-string]
+  (= (str (first numero-string)) "-"))
+
+(defn sacar-negativo
+  [simbolo]
+  (apply str (drop 1 (str simbolo))))
+
+(defn primer-caracter-es-cero
+  [numero-string]
+  (= (str (first numero-string)) "0"))
+
+(defn eliminar-cero-entero
+  [n]
+  (cond
+    (nil? n) nil
+    (and (es-negativo? (str n)) (es-flotante? (sacar-negativo n)) (primer-caracter-es-cero (sacar-negativo n))) (format "-%s" (apply str (drop 1 (sacar-negativo n))))
+    (and (es-flotante? (str n)) (primer-caracter-es-cero (str n))) (format " %s" (apply str (drop 1 (str n))))
+    (and (es-flotante? (str n)) (es-negativo? (str n))) (str n)
+    (es-flotante? (str n)) (format " %s" (str n))
+    (not (es-entero? n)) (str n)
+    (and (es-negativo? (str n)) (es-entero? (sacar-negativo n))) (str n)
+    (es-entero? n) (format " %s" (str n))
+    :else "nil"))
 
 true
 
