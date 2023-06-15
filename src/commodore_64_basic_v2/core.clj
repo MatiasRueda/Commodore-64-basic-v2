@@ -639,11 +639,12 @@
   [x]
   (contains?
    #{'ABS 'AND 'ASC 'ATN 'CLOSE 'CLR 'CMD 'CONT 'COS 'DATA 'DEF 'DIM
-     'END 'EXP 'FN 'FOR 'FRE 'GET 'GET# 'GOSUB 'GOTO 'IF 'INPUT 'INPUT# 'INT
+     'END 'ENV 'EXP 'EXIT 'FN 'FOR 'FRE 'GET 'GET# 'GOSUB 'GOTO 'IF 'INPUT 'INPUT# 'INT
      'LEFT$ 'LEN 'LET 'LIST 'LOAD 'LOG 'MID$ 'MID3$ 'NEW 'NEXT 'NOT 'ON 'OPEN 'OR
-     'PEEK 'POKE 'POS 'PRINT 'PRINT# 'READ 'REM 'RESTORE 'RETURN 'RIGHT$ 'RND
+     'PEEK 'POKE 'POS 'PRINT 'READ 'REM 'RESTORE 'RETURN 'RIGHT$ 'RND
      'RUN 'SAVE 'SGN 'SIN 'SPC 'SQR 'STATUS 'STEP 'STOP 'STR$ 'SYS 'TAB 'TAN
-     'THEN 'TIME 'TIME$ 'TO 'USR 'VAL 'VERIFY 'WAIT}
+     'THEN 'TIME 'TIME$ 'TO 'USR 'VAL 'VERIFY 'WAIT '? '> '>= '< '<= '<> '= '/ '* '+ '-
+     'CLEAR 'CHR$}
    x))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -659,7 +660,7 @@
 (defn operador?
   [x]
   (contains?
-   #{'+ '- '* '/ '< '> '<= '=  '=> '<> '↑}
+   #{'+ '- '* '/ '< '> '<= '=  '>= '<> 'AND 'OR}
    x))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
