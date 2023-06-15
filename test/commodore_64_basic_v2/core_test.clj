@@ -98,10 +98,10 @@
 
 (deftest dar-error-test 
   (testing "Devuelve lo pedido" 
-    (is (= (dar-error 16 [:ejecucion-inmediata 4])  "?SYNTAX  ERROR"nil)) 
-    (is (= (dar-error "?ERROR DISK FULL" [:ejecucion-inmediata 4])  "?ERROR DISK FULL"nil)) 
-    (is (= (dar-error 16 [100 3])  "?SYNTAX  ERROR IN 100"nil)) 
-    (is (= (dar-error "?ERROR DISK FULL" [100 3]) "?ERROR DISK FULL IN 100"nil)))) 
+    (is (= (with-out-str (dar-error 16 [:ejecucion-inmediata 4]))  (with-out-str (print "?SYNTAX  ERROR")))) 
+    (is (= (with-out-str (dar-error "?ERROR DISK FULL" [:ejecucion-inmediata 4]))  (with-out-str (print "?ERROR DISK FULL")))) 
+    (is (= (with-out-str (dar-error 16 [100 3])) (with-out-str (print "?SYNTAX  ERROR IN 100")))) 
+    (is (= (with-out-str (dar-error "?ERROR DISK FULL" [100 3])) (with-out-str (print "?ERROR DISK FULL IN 100")))))) 
 
 
 (deftest variable-float?-test 
@@ -157,15 +157,15 @@
     (is (= (buscar-lineas-restantes [(list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [20 3] [] [] [] 0 {}])
            '((20 (NEXT I) (NEXT J)))))
     (is (= (buscar-lineas-restantes [(list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [15 0] [] [] [] 0 {}])
-           '((15) (20 (NEXT I , J)))))
+           (list (list 15) (list 20 (list 'NEXT 'I (symbol ",") 'J)))))
     (is (= (buscar-lineas-restantes [(list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [15 1] [] [] [] 0 {}])
-           '((15 (X = X + 1)) (20 (NEXT I , J)))))
+           (list '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J)))))
     (is (= (buscar-lineas-restantes [(list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [10 0] [] [] [] 0 {}])
-           '((10) (15 (X = X + 1)) (20 (NEXT I , J)))))
+           (list '(10) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J)))))
     (is (= (buscar-lineas-restantes [(list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [10 1] [] [] [] 0 {}])
-           '((10 (PRINT Y)) (15 (X = X + 1)) (20 (NEXT I , J)))))
+           (list '(10 (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J)))))
     (is (= (buscar-lineas-restantes [(list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [10 2] [] [] [] 0 {}])
-           '((10 (PRINT X) (PRINT Y)) (15 (X = X + 1)) (20 (NEXT I , J))))))) 
+           (list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))))))) 
 
 
 (deftest extraer-data-test 
@@ -198,13 +198,13 @@
 (deftest desambiguar-test
   (testing "recibe un expresion y la retorna sin los + unarios, con los - unarios reemplazados por -u y los MID$ ternarios reemplazados por MID3$"
     (is (= (desambiguar (list '- 2 '* (symbol "(") '- 3 '+ 5 '- (symbol "(") '+ 2 '/ 7 (symbol ")") (symbol ")")))
-           '(-u 2 * (-u 3 + 5 - (2 / 7)))))
+           (list '-u 2 '* (symbol "(") '-u 3 '+ 5 '- (symbol "(") 2 '/ 7 (symbol ")") (symbol ")"))))
     (is (= (desambiguar (list 'MID$ (symbol "(") 1 (symbol ",") 2 (symbol ")")))
-           '(MID$ (1 , 2))))
+           (list 'MID$ (symbol "(") 1 (symbol ",") 2 (symbol ")")))) ;(MID$ ( 1 , 2 ))
     (is (= (desambiguar (list 'MID$ (symbol "(") 1 (symbol ",") 2 (symbol ",") 3 (symbol ")")))
-           '(MID3$ (1 , 2 , 3))))
+           (list 'MID3$ (symbol "(") 1 (symbol ",") 2 (symbol ",") 3 (symbol ")"))))
     (is (= (desambiguar (list 'MID$ (symbol "(") 1 (symbol ",") '- 2 '+ 'K (symbol ",") 3 (symbol ")")))
-           '(MID3$ (1 , -u 2 + K , 3))))))
+           (list 'MID3$ (symbol "(") 1 (symbol ",") '-u 2 '+ 'K (symbol ",") 3 (symbol ")"))))))
 
 
 (deftest precedencia-test 
@@ -212,8 +212,8 @@
     (is (= (precedencia 'OR) 1)) 
     (is (= (precedencia 'AND) 2)) 
     (is (= (precedencia '*) 6)) 
-    (is (= (precedencia '-u) 7)) 
-    (is (= (precedencia 'MID$) 8)))) 
+    (is (= (precedencia '-u ) 7))
+    (is (= (precedencia 'MID$) 8))))
 
 
 (deftest aridad-test 
