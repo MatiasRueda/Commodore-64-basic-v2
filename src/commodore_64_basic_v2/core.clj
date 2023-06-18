@@ -814,7 +814,6 @@
   [cod prog-ptrs]
   (print (verificar-msj-error cod prog-ptrs)))
 
-(dar-error 16 [:ejecucion-inmediata 4])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; variable-float?: predicado para determinar si un identificador
@@ -952,11 +951,6 @@
     (nil? (linea-esta? (obtener-linea amb) (first amb))) nil
     :else (filter (fn [x] (not (nil? x))) (map (partial manipular-sentencia amb) (first amb)))))
 
-
-(buscar-lineas-restantes [(list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [10 2] [] [] [] 0 {}])
-; ((10 (PRINT X) (PRINT Y)) (15 (X = X + 1)) (20 (NEXT I , J)))
-(list (list 15) (list 20 (list 'NEXT 'I (symbol ",") 'J)))
-(list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J)))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; continuar-linea: implementa la sentencia RETURN, retornando una
 ; dupla (un vector) con un resultado (usado luego por
@@ -1165,7 +1159,7 @@
 
 (defn precedencia
   [token]
-  (cond 
+  (cond
     (= token '-u) 7
     (= token 'MID$) 8
     (= token 'OR) 1
@@ -1174,9 +1168,9 @@
     (operacion-relacional? (str token)) 4
     (or (= token '+) (= token '-)) 5
     (or (= token '*) (= token '/)) 6
-    (es-negacion? token) 7 
+    (es-negacion? token) 7
     (palabra-reservada? (str token)) 8
-    :else -1))
+    :else 8))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; aridad: recibe un token y retorna el valor de su aridad, por
@@ -1192,7 +1186,7 @@
 ; user=> (aridad 'MID3$)
 ; 3
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn aridad
+(defn aridades
   [token]
   (get {'ABS 1 'AND 2 'ASC 1 'ATN 1 'CLOSE 1 'CLR 0 'CMD 1 'CONT 0 'COS 1 'DATA 1 'DEF 1
         'DIM 1 'END 0 'EXP 1 'FN 1 'FOR 3 'FRE 1 'GET 1 'GET# 2 'GOSUB 1 'GOTO 1 'IF 2 'INPUT 1 'INPUT# 2 'INT 1
@@ -1202,6 +1196,10 @@
         'THEN 0 'TIME 0 'TIME$ 0 'TO 0 'USR 1 'VAL 1 'VERIFY 0 'WAIT 2 '+ 2 '- 2 '* 2 '/ 2 '↑ 2 '< 2 '<= 2 '= 2 '> 2 '=> 2 '<> 2}
        token))
 
+
+(defn aridad
+  [token]
+  (if (nil? (aridades token)) 0 (aridades token)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; eliminar-cero-decimal: recibe un numero y lo retorna sin ceros
@@ -1300,8 +1298,7 @@
     :else "nil"))
 
 
-(precedencia 'MID$)
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
-  (println "Hello, World!"))
+  (driver-loop))
