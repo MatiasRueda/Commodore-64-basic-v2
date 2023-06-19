@@ -743,6 +743,9 @@
     (operador? simbolo) true
     (number? simbolo) true
     (string? simbolo) true
+    (variable-float? simbolo) true
+    (variable-integer? simbolo) true
+    (variable-string? simbolo) true
     (variable-valida? simbolo) true
     :else false))
 
