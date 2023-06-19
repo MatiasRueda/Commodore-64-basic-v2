@@ -461,17 +461,17 @@
        (= (first expresiones) (list (symbol ",t"))) (do (printf "\t\t") (flush) (recur [(next expresiones) amb]))
        :else (let [resu (eliminar-cero-entero (spy "Esto entra a eliminar-cero-entero" (calcular-expresion (spy "Esto es first expresiones" (first expresiones)) amb)))]
                (if (nil? resu)
-                 resu
+                 resu 
                  (do (print resu) (flush) (recur [(next expresiones) amb])))))))
   ([lista-expr amb]
-   (let [nueva (cons (conj [] (first lista-expr)) (rest lista-expr)),
+   (let [nueva (cons (conj [] (first (spy "Esto es lista-expr" lista-expr))) (rest lista-expr)),
          variable? #(or (variable-integer? %) (variable-float? %) (variable-string? %)),
          funcion? #(and (> (aridad %) 0) (not (operador? %))),
-         interc (reduce #(if (and (or (number? (last %1)) (string? (last %1)) (variable? (last %1)) (= (symbol ")") (last %1)))
-                                  (or (number? %2) (string? %2) (variable? %2) (funcion? %2) (= (symbol "(") %2)))
-                           (conj (conj %1 (symbol ";")) %2) (conj %1 %2)) nueva),
+         interc (spy "Esto es interc" (reduce #(if (and (or (number? (last (spy "Este es el primero" %1))) (string? (last %1)) (variable? (last %1)) (= (symbol ")") (last %1)))
+                                   (or (spy "Es un numero?" (number? (spy "Este es el segundo" %2)))(spy "Es un string"(string? %2)) (spy "Es una variable" (variable? %2)) (spy "Es una funcion"(funcion? %2)) (= (symbol "(") %2)))
+                            (conj (conj %1 (symbol ";")) %2) (conj %1 %2)) nueva)),
          ex (partition-by #(= % (symbol ",t")) (desambiguar-comas interc)),
-         expresiones (apply concat (map #(partition-by (fn [x] (= x (symbol ";"))) %) ex))]
+         expresiones (spy "Esto es expresiones" (apply concat (map #(partition-by (fn [x] (= x (symbol ";"))) %) ex)))]
      (imprimir [expresiones amb]))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -857,7 +857,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn variable-float?
   [x]
-  (if (and (not (variable-integer? x)) (not (variable-string? x))) true  false))
+  (cond 
+    (palabra-reservada? x) false
+    (operador? x) false
+    (and (not (variable-integer? x)) (not (variable-string? x))) true
+    :else false))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; variable-integer?: predicado para determinar si un identificador
@@ -871,7 +875,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn variable-integer?
   [x]
-  (if (= '"%" (str (last (str x)))) true  false))
+  (cond 
+    (palabra-reservada? x) false
+    (operador? x) false
+    (= '"%" (str (last (str x)))) true
+    :else false))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; variable-string?: predicado para determinar si un identificador
@@ -885,7 +893,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn variable-string?
   [x]
-  (if (= '"$" (str (last (str x)))) true  false))
+  (cond
+    (palabra-reservada? x) false
+    (operador? x) false
+    (= '"$" (str (last (str x)))) true
+    :else false))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1334,3 +1346,14 @@
   "I don't do a whole lot ... yet."
   [& args]
   (driver-loop))
+
+(and (> (aridad (symbol "+")) 0) (not (operador? (symbol "+"))))
+;(list (symbol "(") 3 (symbol "+") 5 (symbol ")"))
+; imprimir '[((3 + 5)) [() [:ejecucion-inmediata 0] [] [] [] 0 {}]]
+; EXPRESIONES DEBE SER = ((3 + 5))
+; NO TIENE QUE SER = ((3) (;) (+) (;) (5))
+
+; ORIGINAL 
+;Esto es lista-expr: (3 + 5)
+;Esto es interc: [3 ; + ; 5]
+;Esto es expresiones: ((3) (;) (+) (;) (5))
