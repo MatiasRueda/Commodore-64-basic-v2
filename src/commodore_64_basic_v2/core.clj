@@ -424,11 +424,11 @@
            (fn [pila token]
              (let [ari (spy "Esta es la aridad" (aridad (spy "Esto es token" token))),
                    resu (eliminar-cero-decimal (spy "Esto entra a eliminar-cero-decimal"
-                         (case ari
-                           1 (aplicar token (first (spy "Esto es pila con 1 aridad" pila)) nro-linea)
-                           2 (aplicar token (second pila) (first pila) nro-linea)
-                           3 (aplicar token (nth pila 2) (nth pila 1) (nth pila 0) nro-linea)
-                           token)))]
+                                                    (case ari
+                                                      1 (aplicar token (first (spy "Esto es pila con 1 aridad" pila)) nro-linea)
+                                                      2 (aplicar token (second pila) (first pila) nro-linea)
+                                                      3 (aplicar token (nth pila 2) (nth pila 1) (nth pila 0) nro-linea)
+                                                      token)))]
                (if (nil? (spy "Esto es resu" resu))
                  (reduced resu)
                  (cons resu (drop ari pila)))))
@@ -461,15 +461,15 @@
        (= (first expresiones) (list (symbol ",t"))) (do (printf "\t\t") (flush) (recur [(next expresiones) amb]))
        :else (let [resu (eliminar-cero-entero (spy "Esto entra a eliminar-cero-entero" (calcular-expresion (spy "Esto es first expresiones" (first expresiones)) amb)))]
                (if (nil? resu)
-                 resu 
+                 resu
                  (do (print resu) (flush) (recur [(next expresiones) amb])))))))
   ([lista-expr amb]
    (let [nueva (cons (conj [] (first (spy "Esto es lista-expr" lista-expr))) (rest lista-expr)),
          variable? #(or (variable-integer? %) (variable-float? %) (variable-string? %)),
          funcion? #(and (> (aridad %) 0) (not (operador? %))),
          interc (spy "Esto es interc" (reduce #(if (and (or (number? (last (spy "Este es el primero" %1))) (string? (last %1)) (variable? (last %1)) (= (symbol ")") (last %1)))
-                                   (or (spy "Es un numero?" (number? (spy "Este es el segundo" %2)))(spy "Es un string"(string? %2)) (spy "Es una variable" (variable? %2)) (spy "Es una funcion"(funcion? %2)) (= (symbol "(") %2)))
-                            (conj (conj %1 (symbol ";")) %2) (conj %1 %2)) nueva)),
+                                                        (or (spy "Es un numero?" (number? (spy "Este es el segundo" %2))) (spy "Es un string" (string? %2)) (spy "Es una variable" (variable? %2)) (spy "Es una funcion" (funcion? %2)) (= (symbol "(") %2)))
+                                                 (conj (conj %1 (symbol ";")) %2) (conj %1 %2)) nueva)),
          ex (partition-by #(= % (symbol ",t")) (desambiguar-comas interc)),
          expresiones (spy "Esto es expresiones" (apply concat (map #(partition-by (fn [x] (= x (symbol ";"))) %) ex)))]
      (imprimir [expresiones amb]))))
@@ -740,6 +740,7 @@
   [simbolo]
   (cond
     (= simbolo (symbol ";")) true
+    (= simbolo (symbol ":")) true
     (palabra-reservada? simbolo) true
     (operador? simbolo) true
     (number? simbolo) true
@@ -862,6 +863,7 @@
     (palabra-reservada? x) false
     (operador? x) false
     (= (symbol ";") x) false
+    (= (symbol ":") x) false
     (and (not (variable-integer? x)) (not (variable-string? x))) true
     :else false))
 
@@ -881,6 +883,7 @@
     (palabra-reservada? x) false
     (operador? x) false
     (= (symbol ";") x) false
+    (= (symbol ":") x) false
     (= '"%" (str (last (str x)))) true
     :else false))
 
@@ -900,6 +903,7 @@
     (palabra-reservada? x) false
     (operador? x) false
     (= (symbol ";") x) false
+    (= (symbol ":") x) false
     (= '"$" (str (last (str x)))) true
     :else false))
 
