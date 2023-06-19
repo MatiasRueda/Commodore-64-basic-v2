@@ -864,7 +864,7 @@
     (operador? x) false
     (= (symbol ";") x) false
     (= (symbol ":") x) false
-    (and (not (variable-integer? x)) (not (variable-string? x))) true
+    (and (>= (count (re-find #"[a-zA-Z]" (str x))) 1) (not (variable-integer? x)) (not (variable-string? x))) true
     :else false))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1065,8 +1065,6 @@
   (if (empty? (first prg))
     (first prg)
     (devolver-segun-tipo (sacar-comas (recorrer-prg prg)))))
-
-(extraer-data '(()))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; ejecutar-asignacion: recibe una asignacion y un ambiente, y
