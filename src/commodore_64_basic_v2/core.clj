@@ -739,6 +739,7 @@
 (defn simbolo-valido?
   [simbolo]
   (cond
+    (= simbolo (symbol ";")) true
     (palabra-reservada? simbolo) true
     (operador? simbolo) true
     (number? simbolo) true
@@ -860,6 +861,7 @@
   (cond 
     (palabra-reservada? x) false
     (operador? x) false
+    (= (symbol ";") x) false
     (and (not (variable-integer? x)) (not (variable-string? x))) true
     :else false))
 
@@ -878,6 +880,7 @@
   (cond 
     (palabra-reservada? x) false
     (operador? x) false
+    (= (symbol ";") x) false
     (= '"%" (str (last (str x)))) true
     :else false))
 
@@ -896,6 +899,7 @@
   (cond
     (palabra-reservada? x) false
     (operador? x) false
+    (= (symbol ";") x) false
     (= '"$" (str (last (str x)))) true
     :else false))
 
