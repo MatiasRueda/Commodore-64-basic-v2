@@ -1012,8 +1012,15 @@
 ; user=> (continuar-linea [(list '(10 (PRINT X)) '(15 (GOSUB 100) (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [20 3] [[15 2]] [] [] 0 {}])
 ; [:omitir-restante [((10 (PRINT X)) (15 (GOSUB 100) (X = X + 1)) (20 (NEXT I , J))) [15 1] [] [] [] 0 {}]]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn continuar-linea [amb])
+(defn armar-nuevo-amb
+  [amb nuevo-returns nuevo-puntero]
+  (assoc (assoc amb 1 nuevo-puntero) 2 nuevo-returns))
 
+(defn continuar-linea 
+  [amb]
+  (cond
+    (empty? (amb 2)) (do (dar-error 22 (amb 1)) [nil amb])
+    :else (armar-nuevo-amb amb (apply vector (drop 1 (amb 2))) (assoc (last (amb 2)) 1 (- (last (last (amb 2))) 1)) )))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; extraer-data: recibe la representación intermedia de un programa
@@ -1088,16 +1095,6 @@
 (defn es-entero?
   [simbolo]
   (if (= (count (re-find #"\d+" (str simbolo))) (count (str simbolo))) true false))
-
-(defn asignar-tipo
-  [palabra]
-  (cond 
-    (es-entero? palabra) (Integer/parseInt palabra)
-    :else (str palabra)))
-
-(defn obtener-valor
-  [sentencia]
-  (asignar-tipo (str/trim (last (str/split (apply str (drop-last (drop 1 (str sentencia)))) #"=")))))
 
 (defn obtener-valor-string
   [sentencia]
