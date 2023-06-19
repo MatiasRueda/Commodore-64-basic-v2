@@ -739,6 +739,7 @@
 (defn simbolo-valido?
   [simbolo]
   (cond
+    (= simbolo (symbol ",")) true
     (= simbolo (symbol ";")) true
     (= simbolo (symbol ":")) true
     (palabra-reservada? simbolo) true
