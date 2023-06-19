@@ -532,7 +532,7 @@
       DATA [:sin-errores (assoc amb 4 (agregar-data (amb 4) (rest sentencia)))]; NUEVO 
       RESTORE [:sin-errores (assoc amb 4 [])] ; NUEVO
       CLEAR [:sin-errores (assoc amb 6 {})]; NUEVO
-      LET [:sin-errores (ejecutar-asignacion (apply list (rest sentencia)) amb)]; NUEVO
+      LET [:sin-errores (ejecutar-asignacion (apply list (spy "Esto sale de concatenar en LET" (concat (spy "primera parte" (apply list (take 2 (rest sentencia)))) (spy "Esto sale de elim" (list (calcular-expresion (spy "expresion que enviamos" (apply list (drop 2 (rest sentencia)))) amb)))))) amb)]; NUEVO
       LIST (if (nil? (println (first amb))) [:sin-errores amb] [nil amb]); NUEVO
       NEW [:sin-errores ['() [:ejecucion-inmediata 0] [] [] [] 0 {}]]  ; [(prog-mem)  [prog-ptrs]  [gosub-return-stack]  [for-next-stack]  [data-mem]  data-ptr  {var-mem}]
       RUN (cond
@@ -1352,7 +1352,8 @@
 ; imprimir '[((3 + 5)) [() [:ejecucion-inmediata 0] [] [] [] 0 {}]]
 ; EXPRESIONES DEBE SER = ((3 + 5))
 ; NO TIENE QUE SER = ((3) (;) (+) (;) (5))
-
+(calcular-expresion '(3 + 5) [() [:ejecucion-inmediata 0] [] [] [] 0 {}])
+(rest '(2 = 4 5 6))
 ; ORIGINAL 
 ;Esto es lista-expr: (3 + 5)
 ;Esto es interc: [3 ; + ; 5]
