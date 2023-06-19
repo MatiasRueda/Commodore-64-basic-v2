@@ -1041,23 +1041,32 @@
 
 (defn sacar-comas
   [simbolos]
-  (filter (fn [simbolo] (not (= "," simbolo))) simbolos))
+  (filter (fn [simbolo] (not (= (symbol ",") simbolo))) simbolos))
+
+;USAR TAKE 
+(defn obtener-indice-rem
+  [sentencia]
+  (first (reduce (fn [acc x] (if (= (first (second x)) 'REM) (reduced (conj (drop 1 acc) (first x))) acc)) '(-1) (map-indexed list (rest sentencia)))))
+
+(defn limpiar-rems 
+  [prg]
+  (map (fn [x] (if (neg-int? (obtener-indice-rem x)) x (take (+ 1 (obtener-indice-rem x)) x))) prg))
+
+(defn obtener-data
+  [data-agregada sentencia]
+  (reduce (fn [acc x] (if (= (first x) 'DATA) (concat acc (rest x)) acc)) data-agregada (rest sentencia)))
 
 (defn recorrer-prg
-  [lista-a-devolver prg]
-  (if (empty? prg)
-    (sacar-comas lista-a-devolver)
-    (recorrer-prg
-     (if (and (= (count (first prg)) 2) (= (first (second (first prg))) 'DATA))
-       (concat lista-a-devolver (devolver-segun-tipo (drop 1 (second (first prg)))))
-       lista-a-devolver)
-     (drop 1 prg))))
+  [prg]
+  (reduce (fn [acc x] (obtener-data acc x)) '() (limpiar-rems prg)))
 
 (defn extraer-data
   [prg]
   (if (empty? (first prg))
     (first prg)
-    (recorrer-prg '() prg)))
+    (devolver-segun-tipo (sacar-comas (recorrer-prg prg)))))
+
+(extraer-data '(()))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; ejecutar-asignacion: recibe una asignacion y un ambiente, y
