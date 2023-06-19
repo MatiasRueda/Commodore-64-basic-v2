@@ -425,7 +425,7 @@
              (let [ari (spy "Esta es la aridad" (aridad (spy "Esto es token" token))),
                    resu (eliminar-cero-decimal (spy "Esto entra a eliminar-cero-decimal"
                          (case ari
-                           1 (aplicar token (first pila) nro-linea)
+                           1 (aplicar token (first (spy "Esto es pila con 1 aridad" pila)) nro-linea)
                            2 (aplicar token (second pila) (first pila) nro-linea)
                            3 (aplicar token (nth pila 2) (nth pila 1) (nth pila 0) nro-linea)
                            token)))]
@@ -1145,9 +1145,17 @@
     (pertenece-variable-al-amb? variable amb) (get (obtener-variables-amb amb) variable)
     :else (reemplazar-variable-no-existente variable)))
 
+(defn simbolo-de-expresion? 
+  [simbolo] 
+  (cond 
+    (= simbolo (symbol ",")) true
+    (= simbolo (symbol "(")) true
+    (= simbolo (symbol ")")) true
+    :else false))
+
 (defn preprocesar-expresion
   [expr amb]
-  (map (fn [x] (if (operador? x) x (verificar-reemplazo x amb))) expr))
+  (map (fn [x] (if (or (operador? x) (palabra-reservada? x) (simbolo-de-expresion? x)) x (verificar-reemplazo x amb))) expr))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1205,6 +1213,7 @@
     (= token (symbol ",")) 0
     (= token '-u) 7
     (= token 'MID$) 8
+    (= token 'MID3$) 8
     (= token 'OR) 1
     (= token 'AND) 2
     (= token 'NOT) 3
@@ -1213,7 +1222,7 @@
     (or (= token '*) (= token '/)) 6
     (es-negacion? token) 7
     (palabra-reservada? (str token)) 8
-    :else 8))
+    :else nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; aridad: recibe un token y retorna el valor de su aridad, por
@@ -1346,15 +1355,3 @@
   "I don't do a whole lot ... yet."
   [& args]
   (driver-loop))
-
-(and (> (aridad (symbol "+")) 0) (not (operador? (symbol "+"))))
-;(list (symbol "(") 3 (symbol "+") 5 (symbol ")"))
-; imprimir '[((3 + 5)) [() [:ejecucion-inmediata 0] [] [] [] 0 {}]]
-; EXPRESIONES DEBE SER = ((3 + 5))
-; NO TIENE QUE SER = ((3) (;) (+) (;) (5))
-(calcular-expresion '(3 + 5) [() [:ejecucion-inmediata 0] [] [] [] 0 {}])
-(rest '(2 = 4 5 6))
-; ORIGINAL 
-;Esto es lista-expr: (3 + 5)
-;Esto es interc: [3 ; + ; 5]
-;Esto es expresiones: ((3) (;) (+) (;) (5))
