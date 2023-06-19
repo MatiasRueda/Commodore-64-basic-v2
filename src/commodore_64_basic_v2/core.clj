@@ -125,7 +125,7 @@
   ([linea sentencias amb]
    (if (empty? sentencias)
      [:sin-errores amb]
-     (let [sentencia (anular-invalidos (spy "Esto entra a anular-invalidos" (first sentencias))), par-resul (evaluar sentencia amb)]
+     (let [sentencia (anular-invalidos (first sentencias)), par-resul (evaluar sentencia amb)]
        (if (or (nil? (first par-resul)) (contains? #{:omitir-restante, :error-parcial, :for-inconcluso} (first par-resul)))
          (if (and (= (first (amb 1)) :ejecucion-inmediata) (= (first par-resul) :for-inconcluso))
            (recur linea (take-last (second (second (second par-resul))) linea) (second par-resul))
@@ -345,7 +345,7 @@
 ; 7
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn calcular-expresion [expr amb]
-  (calcular-rpn (spy "Sale de shunting-yard" (shunting-yard (spy "Sale de desambiguar" (desambiguar (spy "Sale de preprocesar-expresion" (preprocesar-expresion expr amb)))))) (amb 1)))
+  (calcular-rpn (spy "ce-shunting-yard" (shunting-yard (spy "ce-desambiguar" (desambiguar (preprocesar-expresion expr amb))))) (amb 1)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; desambiguar-mas-menos: recibe una expresion y la retorna sin
@@ -420,22 +420,22 @@
 (defn calcular-rpn [tokens nro-linea]
   (try
     (let [resu-redu
-          (reduce
+          (spy "el resultado final es" (reduce
            (fn [pila token]
-             (let [ari (spy "Esta es la aridad" (aridad (spy "Esto es token" token))),
-                   resu (eliminar-cero-decimal (spy "Esto entra a eliminar-cero-decimal"
-                                                    (case ari
-                                                      1 (aplicar token (first (spy "Esto es pila con 1 aridad" pila)) nro-linea)
-                                                      2 (aplicar token (second pila) (first pila) nro-linea)
-                                                      3 (aplicar token (nth pila 2) (nth pila 1) (nth pila 0) nro-linea)
-                                                      token)))]
-               (if (nil? (spy "Esto es resu" resu))
+             (let [ari (spy "La aridad es" (aridad(spy "El token es" token))),
+                   resu (eliminar-cero-decimal
+                         (spy "Esto entra a ecd" (case ari
+                           1 (aplicar token (first pila) nro-linea)
+                           2 (spy "El resultado de aplicar es" (aplicar token (spy "second pila es" (second pila)) (spy "first pila es" (first pila)) nro-linea))
+                           3 (aplicar token (nth pila 2) (nth pila 1) (nth pila 0) nro-linea)
+                           token)))]
+               (if (nil? (spy "resu es" resu))
                  (reduced resu)
                  (cons resu (drop ari pila)))))
-           [] (spy "Esto es tokens" tokens))]
-      (if (> (count resu-redu) 1)
+           [] tokens))]
+      (if (> (count (spy "Esto es resu-redu" resu-redu)) 1)
         (dar-error 16 nro-linea)  ; Syntax error
-        (first (spy "Esto es resu-redu" resu-redu))))
+        (first resu-redu)))
     (catch NumberFormatException e 0)
     (catch ClassCastException e (dar-error 163 nro-linea)) ; Type mismatch error
     (catch UnsupportedOperationException e (dar-error 163 nro-linea)) ; Type mismatch error
@@ -459,19 +459,19 @@
        (and (empty? (next expresiones)) (= (first expresiones) (list (symbol ",t")))) (do (printf "\t\t") (flush) :sin-errores)
        (= (first expresiones) (list (symbol ";"))) (do (pr) (flush) (recur [(next expresiones) amb]))
        (= (first expresiones) (list (symbol ",t"))) (do (printf "\t\t") (flush) (recur [(next expresiones) amb]))
-       :else (let [resu (eliminar-cero-entero (spy "Esto entra a eliminar-cero-entero" (calcular-expresion (spy "Esto es first expresiones" (first expresiones)) amb)))]
+       :else (let [resu (eliminar-cero-entero (calcular-expresion (first expresiones) amb))]
                (if (nil? resu)
                  resu
                  (do (print resu) (flush) (recur [(next expresiones) amb])))))))
   ([lista-expr amb]
-   (let [nueva (cons (conj [] (first (spy "Esto es lista-expr" lista-expr))) (rest lista-expr)),
+   (let [nueva (cons (conj [] (first lista-expr)) (rest lista-expr)),
          variable? #(or (variable-integer? %) (variable-float? %) (variable-string? %)),
          funcion? #(and (> (aridad %) 0) (not (operador? %))),
-         interc (spy "Esto es interc" (reduce #(if (and (or (number? (last (spy "Este es el primero" %1))) (string? (last %1)) (variable? (last %1)) (= (symbol ")") (last %1)))
-                                                        (or (spy "Es un numero?" (number? (spy "Este es el segundo" %2))) (spy "Es un string" (string? %2)) (spy "Es una variable" (variable? %2)) (spy "Es una funcion" (funcion? %2)) (= (symbol "(") %2)))
-                                                 (conj (conj %1 (symbol ";")) %2) (conj %1 %2)) nueva)),
+         interc (reduce #(if (and (or (number? (last %1)) (string? (last %1)) (variable? (last %1)) (= (symbol ")") (last %1)))
+                                  (or (number? %2) (string? %2) (variable? %2) (funcion? %2) (= (symbol "(") %2)))
+                           (conj (conj %1 (symbol ";")) %2) (conj %1 %2)) nueva),
          ex (partition-by #(= % (symbol ",t")) (desambiguar-comas interc)),
-         expresiones (spy "Esto es expresiones" (apply concat (map #(partition-by (fn [x] (= x (symbol ";"))) %) ex)))]
+         expresiones (apply concat (map #(partition-by (fn [x] (= x (symbol ";"))) %) ex))]
      (imprimir [expresiones amb]))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -493,7 +493,6 @@
                    :else cont-paren),
            nuevo (if (and (= act (symbol ",")) (zero? paren)) (symbol ",t") act)]
        (recur (next lista-expr) paren (conj res nuevo))))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; A PARTIR DE ESTE PUNTO HAY QUE COMPLETAR LAS FUNCIONES DADAS ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -509,7 +508,7 @@
   (apply vector (concat lista-data (apply vector nueva-data))))
 
 (defn evaluar [sentencia amb]
-  (if (or (contains? (set (spy "sentencia que entra " sentencia)) nil) (and (palabra-reservada? (first sentencia)) (= (second sentencia) '=)))
+  (if (or (contains? (set sentencia) nil) (and (palabra-reservada? (first sentencia)) (= (second sentencia) '=)))
     (do (dar-error 16 (amb 1)) [nil amb])  ; Syntax error  
     (case (first sentencia)
       PRINT (let [args (next sentencia), resu (imprimir args amb)]
@@ -532,7 +531,7 @@
       DATA [:sin-errores (assoc amb 4 (agregar-data (amb 4) (rest sentencia)))]; NUEVO 
       RESTORE [:sin-errores (assoc amb 4 [])] ; NUEVO
       CLEAR [:sin-errores (assoc amb 6 {})]; NUEVO
-      LET [:sin-errores (ejecutar-asignacion (apply list (spy "Esto sale de concatenar en LET" (concat (spy "primera parte" (apply list (take 2 (rest sentencia)))) (spy "Esto sale de elim" (list (calcular-expresion (spy "expresion que enviamos" (apply list (drop 2 (rest sentencia)))) amb)))))) amb)]; NUEVO
+      LET [:sin-errores (ejecutar-asignacion (apply list (concat (apply list (take 2 (rest sentencia))) (list (calcular-expresion (apply list (drop 2 (rest sentencia))) amb)))) amb)]; NUEVO
       LIST (if (nil? (println (first amb))) [:sin-errores amb] [nil amb]); NUEVO
       NEW [:sin-errores ['() [:ejecucion-inmediata 0] [] [] [] 0 {}]]  ; [(prog-mem)  [prog-ptrs]  [gosub-return-stack]  [for-next-stack]  [data-mem]  data-ptr  {var-mem}]
       RUN (cond
@@ -556,7 +555,7 @@
                                                               (cons 'GOTO (next resto-if))
                                                               (next resto-if))
                                  :else (do (dar-error 16 (amb 1)) nil)),  ; Syntax error
-               resu (calcular-expresion condicion-de-if amb)]
+               resu (spy "Este es el resultado de calcular la expresion" (calcular-expresion condicion-de-if amb))]
            (if (zero? resu)
              [:omitir-restante amb]
              (recur sentencia-de-if amb)))
@@ -624,7 +623,7 @@
              (if (= operando1 operando2) 0 -1)
              (if (= (+ 0 operando1) (+ 0 operando2)) 0 -1))) ; NUEVO
        < (if (< operando1 operando2) -1 0) ; NUEVO
-       <= (if (<= operando1 operando2) -1 0) ; NUEVO
+       <= (spy "Esto devuelve" (if (<= operando1 operando2) -1 0)) ; NUEVO
        > (if (> operando1 operando2) -1 0) ; NUEVO
        >= (if (>= operando1 operando2) -1 0) ; NUEVO
 
@@ -1306,6 +1305,7 @@
 (defn eliminar-cero-decimal
   [n]
   (cond
+    (neg-int? n) n
     (string? n) n
     (symbol? n) n
     (es-entero? n) n
