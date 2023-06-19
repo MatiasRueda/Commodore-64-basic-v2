@@ -3,6 +3,11 @@
 
 (require '[clojure.string :as str])
 
+(defn spy
+  ([x] (do (prn x) x))
+  ([msg x] (do (print msg) (print ": ") (prn x) x)))
+
+
 (declare driver-loop)                     ; NO TOCAR
 (declare string-a-tokens)                 ; NO TOCAR
 (declare evaluar-linea)                   ; NO TOCAR
@@ -120,7 +125,7 @@
   ([linea sentencias amb]
    (if (empty? sentencias)
      [:sin-errores amb]
-     (let [sentencia (anular-invalidos (first sentencias)), par-resul (evaluar sentencia amb)]
+     (let [sentencia (anular-invalidos (spy "Esto entra a anular-invalidos" (first sentencias))), par-resul (evaluar sentencia amb)]
        (if (or (nil? (first par-resul)) (contains? #{:omitir-restante, :error-parcial, :for-inconcluso} (first par-resul)))
          (if (and (= (first (amb 1)) :ejecucion-inmediata) (= (first par-resul) :for-inconcluso))
            (recur linea (take-last (second (second (second par-resul))) linea) (second par-resul))
@@ -340,7 +345,7 @@
 ; 7
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn calcular-expresion [expr amb]
-  (calcular-rpn (shunting-yard (desambiguar (preprocesar-expresion expr amb))) (amb 1)))
+  (calcular-rpn (spy "Sale de shunting-yard" (shunting-yard (spy "Sale de desambiguar" (desambiguar (spy "Sale de preprocesar-expresion" (preprocesar-expresion expr amb)))))) (amb 1)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; desambiguar-mas-menos: recibe una expresion y la retorna sin
@@ -417,20 +422,20 @@
     (let [resu-redu
           (reduce
            (fn [pila token]
-             (let [ari (aridad token),
-                   resu (eliminar-cero-decimal
+             (let [ari (spy "Esta es la aridad" (aridad (spy "Esto es token" token))),
+                   resu (eliminar-cero-decimal (spy "Esto entra a eliminar-cero-decimal"
                          (case ari
                            1 (aplicar token (first pila) nro-linea)
                            2 (aplicar token (second pila) (first pila) nro-linea)
                            3 (aplicar token (nth pila 2) (nth pila 1) (nth pila 0) nro-linea)
-                           token))]
-               (if (nil? resu)
+                           token)))]
+               (if (nil? (spy "Esto es resu" resu))
                  (reduced resu)
                  (cons resu (drop ari pila)))))
-           [] tokens)]
+           [] (spy "Esto es tokens" tokens))]
       (if (> (count resu-redu) 1)
         (dar-error 16 nro-linea)  ; Syntax error
-        (first resu-redu)))
+        (first (spy "Esto es resu-redu" resu-redu))))
     (catch NumberFormatException e 0)
     (catch ClassCastException e (dar-error 163 nro-linea)) ; Type mismatch error
     (catch UnsupportedOperationException e (dar-error 163 nro-linea)) ; Type mismatch error
@@ -454,7 +459,7 @@
        (and (empty? (next expresiones)) (= (first expresiones) (list (symbol ",t")))) (do (printf "\t\t") (flush) :sin-errores)
        (= (first expresiones) (list (symbol ";"))) (do (pr) (flush) (recur [(next expresiones) amb]))
        (= (first expresiones) (list (symbol ",t"))) (do (printf "\t\t") (flush) (recur [(next expresiones) amb]))
-       :else (let [resu (eliminar-cero-entero (calcular-expresion (first expresiones) amb))]
+       :else (let [resu (eliminar-cero-entero (spy "Esto entra a eliminar-cero-entero" (calcular-expresion (spy "Esto es first expresiones" (first expresiones)) amb)))]
                (if (nil? resu)
                  resu
                  (do (print resu) (flush) (recur [(next expresiones) amb])))))))
@@ -498,8 +503,13 @@
 ; con un resultado (usado luego por evaluar-linea) y un ambiente
 ; actualizado
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn agregar-data
+  [lista-data nueva-data]
+  (apply vector (concat lista-data (apply vector nueva-data))))
+
 (defn evaluar [sentencia amb]
-  (if (or (contains? (set sentencia) nil) (and (palabra-reservada? (first sentencia)) (= (second sentencia) '=)))
+  (if (or (contains? (set (spy "sentencia que entra " sentencia)) nil) (and (palabra-reservada? (first sentencia)) (= (second sentencia) '=)))
     (do (dar-error 16 (amb 1)) [nil amb])  ; Syntax error  
     (case (first sentencia)
       PRINT (let [args (next sentencia), resu (imprimir args amb)]
@@ -519,6 +529,11 @@
                  [:sin-errores amb]))
              (do (dar-error 201 (amb 1)) [nil amb]))  ; Save within program error
       REM [:omitir-restante amb]
+      DATA [:sin-errores (assoc amb 4 (agregar-data (amb 4) (rest sentencia)))]; NUEVO 
+      RESTORE [:sin-errores (assoc amb 4 [])] ; NUEVO
+      CLEAR [:sin-errores (assoc amb 6 {})]; NUEVO
+      LET [:sin-errores (ejecutar-asignacion (apply list (rest sentencia)) amb)]; NUEVO
+      LIST (if (nil? (println (first amb))) [:sin-errores amb] [nil amb]); NUEVO
       NEW [:sin-errores ['() [:ejecucion-inmediata 0] [] [] [] 0 {}]]  ; [(prog-mem)  [prog-ptrs]  [gosub-return-stack]  [for-next-stack]  [data-mem]  data-ptr  {var-mem}]
       RUN (cond
             (empty? (amb 0)) [:sin-errores amb]  ; no hay programa
@@ -595,6 +610,7 @@
      (case operador
        -u (- operando)
        LEN (count operando)
+       ASC (int (first operando)) ; NUEVO
        STR$ (if (not (number? operando)) (dar-error 163 nro-linea) (eliminar-cero-entero operando)) ; Type mismatch error
        CHR$ (if (or (< operando 0) (> operando 255)) (dar-error 53 nro-linea) (str (char operando)))))) ; Illegal quantity error
   ([operador operando1 operando2 nro-linea]
@@ -604,12 +620,22 @@
        = (if (and (string? operando1) (string? operando2))
            (if (= operando1 operando2) -1 0)
            (if (= (+ 0 operando1) (+ 0 operando2)) -1 0))
+       <> ((if (and (string? operando1) (string? operando2))
+             (if (= operando1 operando2) 0 -1)
+             (if (= (+ 0 operando1) (+ 0 operando2)) 0 -1))) ; NUEVO
+       < (if (< operando1 operando2) -1 0) ; NUEVO
+       <= (if (<= operando1 operando2) -1 0) ; NUEVO
+       > (if (> operando1 operando2) -1 0) ; NUEVO
+       >= (if (>= operando1 operando2) -1 0) ; NUEVO
+
        + (if (and (string? operando1) (string? operando2))
            (str operando1 operando2)
            (+ operando1 operando2))
        - (- operando1 operando2)
+       * (* operando1 operando2) ; NUEVO
        / (if (= operando2 0) (dar-error 133 nro-linea) (/ operando1 operando2))  ; Division by zero error
        AND (let [op1 (+ 0 operando1), op2 (+ 0 operando2)] (if (and (not= op1 0) (not= op2 0)) -1 0))
+       OR (let [op1 (+ 0 operando1), op2 (+ 0 operando2)] (if (or (= op1 0) (= op2 0)) -1 0)) ; NUEVO
        MID$ (if (< operando2 1)
               (dar-error 53 nro-linea)  ; Illegal quantity error
               (let [ini (dec operando2)] (if (>= ini (count operando1)) "" (subs operando1 ini)))))))
@@ -716,6 +742,7 @@
     (palabra-reservada? simbolo) true
     (operador? simbolo) true
     (number? simbolo) true
+    (string? simbolo) true
     (variable-valida? simbolo) true
     :else false))
 
@@ -1160,6 +1187,7 @@
 (defn precedencia
   [token]
   (cond
+    (= token (symbol ",")) 0
     (= token '-u) 7
     (= token 'MID$) 8
     (= token 'OR) 1
@@ -1241,6 +1269,7 @@
 (defn eliminar-cero-decimal
   [n]
   (cond
+    (string? n) n
     (symbol? n) n
     (es-entero? n) n
     :else (armar-numero n)))
