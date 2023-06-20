@@ -1,8 +1,7 @@
 (ns commodore-64-basic-v2.core
   (:gen-class) 
-  (:require [clojure.string :as str]))
-
-(require '[clojure.string :as str])
+  (:require [clojure.java.io :as io]
+            [clojure.string :as str]))
 
 (defn spy
   ([x] (do (prn x) x))
@@ -323,8 +322,8 @@
 ; representacion intermedia del codigo contenido en el
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn cargar-arch [nom nro-linea]
-  (if (.exists (clojure.java.io/file nom))
-    (remove empty? (with-open [rdr (clojure.java.io/reader nom)] (doall (map string-a-tokens (line-seq rdr)))))
+  (if (.exists (io/file nom))
+    (remove empty? (with-open [rdr (io/reader nom)] (doall (map string-a-tokens (line-seq rdr)))))
     (dar-error 6 nro-linea))  ; File not found
   )
 
@@ -334,7 +333,7 @@
 ; retorna el ambiente
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn grabar-arch [nom amb]
-  (let [arch (clojure.java.io/writer nom)]
+  (let [arch (io/writer nom)]
     (do (binding [*out* arch] (mostrar-listado (amb 0)))
         (.close arch)
         amb)))
