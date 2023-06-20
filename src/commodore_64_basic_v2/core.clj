@@ -617,6 +617,8 @@
      (case operador
        -u (- operando)
        LEN (count operando)
+       SIN (Math/sin operando)
+       ATN (Math/atan operando)
        ASC (int (first operando)) ; NUEVO
        STR$ (if (not (number? operando)) (dar-error 163 nro-linea) (eliminar-cero-entero operando)) ; Type mismatch error
        CHR$ (if (or (< operando 0) (> operando 255)) (dar-error 53 nro-linea) (str (char operando))) ; Illegal quantity error 
@@ -1273,7 +1275,9 @@
 
 (defn obtener-decimales
   [numero]
-  (Integer/parseInt (last (str/split (str numero) #"[.]"))))
+  (if (= (count (str/split (str numero) #"[.]")) 2)
+    (Integer/parseInt (last (str/split (str numero) #"[.]")))
+    nil))
 
 (defn recorrer-numero
   [cantidad-innecesario numero]
@@ -1287,9 +1291,10 @@
 
 (defn armar-numero
   [numero]
-  (if (zero? (count (sacar-innecesarios (obtener-decimales (str numero)))))
-    (obtener-entero numero)
-    (Float/parseFloat (format "%s.%s" (str (obtener-entero numero)) (sacar-innecesarios (obtener-decimales (str numero)))))))
+  (cond
+    (zero? (count (sacar-innecesarios (obtener-decimales (str numero))))) (obtener-entero numero)
+    (neg? numero) (* -1 (Double/parseDouble (format "%s.%s" (str (obtener-entero numero)) (sacar-innecesarios (obtener-decimales (str numero))))))
+    :else (Double/parseDouble (format "%s.%s" (str (obtener-entero numero)) (sacar-innecesarios (obtener-decimales (str numero)))))))
 
 (defn eliminar-cero-decimal
   [n]
@@ -1299,7 +1304,6 @@
     (symbol? n) n
     (es-entero? n) n
     :else (armar-numero (float n))))
-
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

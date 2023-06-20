@@ -231,7 +231,10 @@
     (is (= (eliminar-cero-decimal 1.50) 1.5))
     (is (= (eliminar-cero-decimal 1.0) 1))
     (is (= (eliminar-cero-decimal 'A) 'A))
-    (is (= (eliminar-cero-decimal -1) -1)))) 
+    (is (= (eliminar-cero-decimal -1) -1)) 
+    (is (= (eliminar-cero-decimal -1.0) -1))
+    (is (= (eliminar-cero-decimal -0.533) -0.533))
+    (is (= (eliminar-cero-decimal "Holaa") "Holaa")))) 
 
 (deftest eliminar-cero-entero-test 
   (testing "recibe un simbolo y lo retorna convertido en cadena, omitiendo para los numeros del intervalo (-1..1) el cero a la izquierda del punto" 
