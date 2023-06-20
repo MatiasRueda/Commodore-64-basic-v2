@@ -345,8 +345,11 @@
 ; 7
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn calcular-expresion [expr amb]
-  (calcular-rpn (spy "ce-shunting-yard" (shunting-yard (spy "ce-desambiguar" (desambiguar (preprocesar-expresion expr amb))))) (amb 1)))
+  (calcular-rpn (spy "Esto da sy" (shunting-yard (desambiguar (preprocesar-expresion expr amb)))) (amb 1)))
 
+;(+ (calcular-expresion '(- 1) '[() [:ejecucion-inmediata 0] [] [] [] 0 {}]) 1)
+
+;(calcular-rpn '(L "MATIAS" MID$) '[() [:ejecucion-inmediata 1] [] [[I 1 -1 [:ejecucion-inmediata 1]]] [] 0 {I L}])
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; desambiguar-mas-menos: recibe una expresion y la retorna sin
 ; los + unarios y con los - unarios reemplazados por -u  
@@ -420,20 +423,20 @@
 (defn calcular-rpn [tokens nro-linea]
   (try
     (let [resu-redu
-          (spy "el resultado final es" (reduce
+          (reduce
            (fn [pila token]
-             (let [ari (spy "La aridad es" (aridad(spy "El token es" token))),
+             (let [ari (aridad token),
                    resu (eliminar-cero-decimal
-                         (spy "Esto entra a ecd" (case ari
+                         (case ari
                            1 (aplicar token (first pila) nro-linea)
-                           2 (spy "El resultado de aplicar es" (aplicar token (spy "second pila es" (second pila)) (spy "first pila es" (first pila)) nro-linea))
+                           2 (aplicar token (second pila) (first pila) nro-linea)
                            3 (aplicar token (nth pila 2) (nth pila 1) (nth pila 0) nro-linea)
-                           token)))]
-               (if (nil? (spy "resu es" resu))
+                           token))]
+               (if (nil? resu)
                  (reduced resu)
                  (cons resu (drop ari pila)))))
-           [] tokens))]
-      (if (> (count (spy "Esto es resu-redu" resu-redu)) 1)
+           [] tokens)]
+      (if (> (count resu-redu) 1)
         (dar-error 16 nro-linea)  ; Syntax error
         (first resu-redu)))
     (catch NumberFormatException e 0)
@@ -493,6 +496,7 @@
                    :else cont-paren),
            nuevo (if (and (= act (symbol ",")) (zero? paren)) (symbol ",t") act)]
        (recur (next lista-expr) paren (conj res nuevo))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; A PARTIR DE ESTE PUNTO HAY QUE COMPLETAR LAS FUNCIONES DADAS ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -508,9 +512,9 @@
   (apply vector (concat lista-data (apply vector nueva-data))))
 
 (defn evaluar [sentencia amb]
-  (if (or (contains? (set sentencia) nil) (and (palabra-reservada? (first sentencia)) (= (second sentencia) '=)))
+  (if (or (contains? (set (spy "sentencia que entra" sentencia)) nil) (and (palabra-reservada? (first sentencia)) (= (second sentencia) '=)))
     (do (dar-error 16 (amb 1)) [nil amb])  ; Syntax error  
-    (case (first sentencia)
+    (case (spy "primer sentencia" (first sentencia))
       PRINT (let [args (next sentencia), resu (imprimir args amb)]
               (if (and (nil? resu) (some? args))
                 [nil amb]
@@ -528,6 +532,7 @@
                  [:sin-errores amb]))
              (do (dar-error 201 (amb 1)) [nil amb]))  ; Save within program error
       REM [:omitir-restante amb]
+      END [nil amb]
       DATA [:sin-errores (assoc amb 4 (agregar-data (amb 4) (rest sentencia)))]; NUEVO 
       RESTORE [:sin-errores (assoc amb 4 [])] ; NUEVO
       CLEAR [:sin-errores (assoc amb 6 {})]; NUEVO
@@ -555,7 +560,7 @@
                                                               (cons 'GOTO (next resto-if))
                                                               (next resto-if))
                                  :else (do (dar-error 16 (amb 1)) nil)),  ; Syntax error
-               resu (spy "Este es el resultado de calcular la expresion" (calcular-expresion condicion-de-if amb))]
+               resu (calcular-expresion condicion-de-if amb)]
            (if (zero? resu)
              [:omitir-restante amb]
              (recur sentencia-de-if amb)))
@@ -576,25 +581,25 @@
                   (if (= (first (amb 1)) :ejecucion-inmediata)
                     (continuar-programa nuevo-amb)
                     [:omitir-restante nuevo-amb]))))
-      RETURN (continuar-linea amb)
+      RETURN (continuar-linea amb) 
       FOR (let [separados (partition-by #(contains? #{"TO" "STEP"} (str %)) (next sentencia))]
-            (if (not (or (and (= (count separados) 3) (variable-float? (ffirst separados)) (= (nth separados 1) '(TO)))
-                         (and (= (count separados) 5) (variable-float? (ffirst separados)) (= (nth separados 1) '(TO)) (= (nth separados 3) '(STEP)))))
-              (do (dar-error 16 (amb 1)) [nil amb])  ; Syntax error
-              (let [valor-final (calcular-expresion (nth separados 2) amb),
-                    valor-step (if (= (count separados) 5) (calcular-expresion (nth separados 4) amb) 1)]
-                (if (or (nil? valor-final) (nil? valor-step))
-                  [nil amb]
-                  (recur (first separados) (assoc amb 3 (conj (amb 3) [(ffirst separados) valor-final valor-step (amb 1)])))))))
+              (if (not (or (and (= (count separados) 3) (variable-float? (ffirst separados)) (= (nth separados 1) '(TO)))
+                           (and (= (count (spy "separado"separados)) 5) (variable-float? (ffirst separados)) (= (nth separados 1) '(TO)) (= (nth separados 3) '(STEP)))))
+                (do (dar-error 16 (amb 1)) [nil amb])  ; Syntax error
+                (let [valor-final (calcular-expresion (nth separados 2) amb),
+                      valor-step (if (= (count separados) 5) (calcular-expresion (spy "Esto entra en ce" (nth separados 4)) (spy "Esto entra a ce como amb" amb)) 1)]
+                  (if (or (nil? (spy "valor-final" valor-final)) (nil? (spy "valor-step" valor-step)))
+                    [nil amb]
+                    (recur (first separados) (assoc amb 3 (conj (amb 3) [(ffirst separados) valor-final valor-step (amb 1)])))))))
       NEXT (if (<= (count (next sentencia)) 1)
              (retornar-al-for amb (fnext sentencia))
              (do (dar-error 16 (amb 1)) [nil amb]))  ; Syntax error
-      (if (= (second sentencia) '=)
-        (let [resu (ejecutar-asignacion sentencia amb)]
-          (if (nil? resu)
-            [nil amb]
-            [:sin-errores resu]))
-        (do (dar-error 16 (amb 1)) [nil amb]))))  ; Syntax error
+        (if (= (second sentencia) '=)
+            (let [resu (ejecutar-asignacion sentencia amb)]
+                 (if (nil? resu)
+                     [nil amb]
+                     [:sin-errores resu]))
+            (do (dar-error 16 (amb 1)) [nil amb]))))  ; Syntax error
   )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -623,7 +628,7 @@
              (if (= operando1 operando2) 0 -1)
              (if (= (+ 0 operando1) (+ 0 operando2)) 0 -1))) ; NUEVO
        < (if (< operando1 operando2) -1 0) ; NUEVO
-       <= (spy "Esto devuelve" (if (<= operando1 operando2) -1 0)) ; NUEVO
+       <= (if (<= operando1 operando2) -1 0) ; NUEVO
        > (if (> operando1 operando2) -1 0) ; NUEVO
        >= (if (>= operando1 operando2) -1 0) ; NUEVO
 
@@ -738,6 +743,9 @@
 (defn simbolo-valido?
   [simbolo]
   (cond
+    (= simbolo (symbol ")")) true
+    (= simbolo (symbol "(")) true
+    (= simbolo (symbol ".")) true
     (= simbolo (symbol ",")) true
     (= simbolo (symbol ";")) true
     (= simbolo (symbol ":")) true
@@ -1233,7 +1241,7 @@
     (or (= token '+) (= token '-)) 5
     (or (= token '*) (= token '/)) 6
     (es-negacion? token) 7
-    (palabra-reservada? (str token)) 8
+    (palabra-reservada? token) 8
     :else nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1256,7 +1264,7 @@
         'DIM 1 'END 0 'EXP 1 'FN 1 'FOR 3 'FRE 1 'GET 1 'GET# 2 'GOSUB 1 'GOTO 1 'IF 2 'INPUT 1 'INPUT# 2 'INT 1
         'LEFT$ 2 'LEN 1 'LET 2 'LIST 1 'LOAD 1 'LOG 1 'MID$ 2 'MID3$ 3 'NEW 0 'NEXT 0 'NOT 1 'ON 1 'OPEN 2 'OR 2
         'PEEK 2 'POKE 2 'POS 1  'PRINT 1 'PRINT# 2 'READ 1  'REM 1 'RESTORE 0 'RETURN 0 'RIGHT$ 2 'RND 1
-        'RUN 1 'SAVE 2 'SGN 1 'SIN 1 'SPC 1 'SQR 1 'STATUS 0 'STEP 0 'STOP 0 'STR$ 1 'SYS 1 'TAB 1 'TAN 1
+        'RUN 1 'SAVE 2 'SGN 1 'SIN 1 'SPC 1 'SQR 1 'STATUS 0 'STEP 0 'STOP 0 'STR$ 1 'SYS 1 'TAB 1 'TAN 1 '-u 1
         'THEN 0 'TIME 0 'TIME$ 0 'TO 0 'USR 1 'VAL 1 'VERIFY 0 'WAIT 2 '+ 2 '- 2 '* 2 '/ 2 '↑ 2 '< 2 '<= 2 '= 2 '> 2 '=> 2 '<> 2}
        token))
 
