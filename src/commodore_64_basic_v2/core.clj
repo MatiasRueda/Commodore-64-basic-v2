@@ -337,7 +337,6 @@
     (do (binding [*out* arch] (mostrar-listado (amb 0)))
         (.close arch)
         amb)))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; calcular-expresion: recibe una expresion y un ambiente, y
 ; retorna el valor de la expresion, por ejemplo:
@@ -618,6 +617,8 @@
        LEN (count operando)
        SIN (Math/sin operando)
        ATN (Math/atan operando)
+       EXP (Math/exp operando)
+       LOG (Math/log operando)
        ASC (int (first operando)) ; NUEVO
        STR$ (if (not (number? operando)) (dar-error 163 nro-linea) (eliminar-cero-entero operando)) ; Type mismatch error
        CHR$ (if (or (< operando 0) (> operando 255)) (dar-error 53 nro-linea) (str (char operando))) ; Illegal quantity error 
