@@ -346,7 +346,7 @@
 ; 7
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn calcular-expresion [expr amb]
-  (calcular-rpn (spy "Esto da sy" (shunting-yard (desambiguar (preprocesar-expresion expr amb)))) (amb 1)))
+  (calcular-rpn (shunting-yard (desambiguar (preprocesar-expresion expr amb))) (amb 1)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; desambiguar-mas-menos: recibe una expresion y la retorna sin
@@ -423,11 +423,11 @@
     (let [resu-redu
           (reduce
            (fn [pila token]
-             (let [ari (aridad token),
+             (let [ari (aridad (spy "token" token)),
                    resu (eliminar-cero-decimal
                          (case ari
                            1 (aplicar token (first pila) nro-linea)
-                           2 (aplicar token (second pila) (first pila) nro-linea)
+                           2 (spy "aplicar" (aplicar token (second pila) (first pila) nro-linea))
                            3 (aplicar token (nth pila 2) (nth pila 1) (nth pila 0) nro-linea)
                            token))]
                (if (nil? resu)
@@ -510,9 +510,9 @@
   (apply vector (concat lista-data (apply vector nueva-data))))
 
 (defn evaluar [sentencia amb]
-  (if (or (contains? (set (spy "sentencia que entra" sentencia)) nil) (and (palabra-reservada? (first sentencia)) (= (second sentencia) '=)))
+  (if (or (contains? (set sentencia) nil) (and (palabra-reservada? (first sentencia)) (= (second sentencia) '=)))
     (do (dar-error 16 (amb 1)) [nil amb])  ; Syntax error  
-    (case (spy "primer sentencia" (first sentencia))
+    (case (first sentencia)
       PRINT (let [args (next sentencia), resu (imprimir args amb)]
               (if (and (nil? resu) (some? args))
                 [nil amb]
@@ -579,25 +579,25 @@
                   (if (= (first (amb 1)) :ejecucion-inmediata)
                     (continuar-programa nuevo-amb)
                     [:omitir-restante nuevo-amb]))))
-      RETURN (continuar-linea amb) 
+      RETURN (continuar-linea amb)
       FOR (let [separados (partition-by #(contains? #{"TO" "STEP"} (str %)) (next sentencia))]
-              (if (not (or (and (= (count separados) 3) (variable-float? (ffirst separados)) (= (nth separados 1) '(TO)))
-                           (and (= (count (spy "separado"separados)) 5) (variable-float? (ffirst separados)) (= (nth separados 1) '(TO)) (= (nth separados 3) '(STEP)))))
-                (do (dar-error 16 (amb 1)) [nil amb])  ; Syntax error
-                (let [valor-final (calcular-expresion (nth separados 2) amb),
-                      valor-step (if (= (count separados) 5) (calcular-expresion (spy "Esto entra en ce" (nth separados 4)) (spy "Esto entra a ce como amb" amb)) 1)]
-                  (if (or (nil? (spy "valor-final" valor-final)) (nil? (spy "valor-step" valor-step)))
-                    [nil amb]
-                    (recur (first separados) (assoc amb 3 (conj (amb 3) [(ffirst separados) valor-final valor-step (amb 1)])))))))
+            (if (not (or (and (= (count separados) 3) (variable-float? (ffirst separados)) (= (nth separados 1) '(TO)))
+                         (and (= (count separados) 5) (variable-float? (ffirst separados)) (= (nth separados 1) '(TO)) (= (nth separados 3) '(STEP)))))
+              (do (dar-error 16 (amb 1)) [nil amb])  ; Syntax error
+              (let [valor-final (calcular-expresion (nth separados 2) amb),
+                    valor-step (if (= (count separados) 5) (calcular-expresion (nth separados 4) amb) 1)]
+                (if (or (nil? valor-final) (nil? valor-step))
+                  [nil amb]
+                  (recur (first separados) (assoc amb 3 (conj (amb 3) [(ffirst separados) valor-final valor-step (amb 1)])))))))
       NEXT (if (<= (count (next sentencia)) 1)
              (retornar-al-for amb (fnext sentencia))
              (do (dar-error 16 (amb 1)) [nil amb]))  ; Syntax error
-        (if (= (second sentencia) '=)
-            (let [resu (ejecutar-asignacion sentencia amb)]
-                 (if (nil? resu)
-                     [nil amb]
-                     [:sin-errores resu]))
-            (do (dar-error 16 (amb 1)) [nil amb]))))  ; Syntax error
+      (if (= (second sentencia) '=)
+        (let [resu (ejecutar-asignacion sentencia amb)]
+          (if (nil? resu)
+            [nil amb]
+            [:sin-errores resu]))
+        (do (dar-error 16 (amb 1)) [nil amb]))))  ; Syntax error
   )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -605,6 +605,11 @@
 ; resultante (si ocurre un error, muestra un mensaje y retorna
 ; nil)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn obtener-entero
+  [numero]
+  (Integer/parseInt (first (str/split (str numero) #"[.]"))))
+
+
 (defn aplicar
   ([operador operando nro-linea]
    (if (nil? operando)
@@ -614,7 +619,9 @@
        LEN (count operando)
        ASC (int (first operando)) ; NUEVO
        STR$ (if (not (number? operando)) (dar-error 163 nro-linea) (eliminar-cero-entero operando)) ; Type mismatch error
-       CHR$ (if (or (< operando 0) (> operando 255)) (dar-error 53 nro-linea) (str (char operando)))))) ; Illegal quantity error
+       CHR$ (if (or (< operando 0) (> operando 255)) (dar-error 53 nro-linea) (str (char operando))) ; Illegal quantity error 
+       INT (obtener-entero operando)))) 
+  
   ([operador operando1 operando2 nro-linea]
    (if (or (nil? operando1) (nil? operando2))
      (dar-error 16 nro-linea)  ; Syntax error
@@ -622,9 +629,9 @@
        = (if (and (string? operando1) (string? operando2))
            (if (= operando1 operando2) -1 0)
            (if (= (+ 0 operando1) (+ 0 operando2)) -1 0))
-       <> ((if (and (string? operando1) (string? operando2))
-             (if (= operando1 operando2) 0 -1)
-             (if (= (+ 0 operando1) (+ 0 operando2)) 0 -1))) ; NUEVO
+       <> (if (and (string? operando1) (string? operando2))
+            (if (= operando1 operando2) 0 -1)
+            (if (= (+ 0 operando1) (+ 0 operando2)) 0 -1)) ; NUEVO
        < (if (< operando1 operando2) -1 0) ; NUEVO
        <= (if (<= operando1 operando2) -1 0) ; NUEVO
        > (if (> operando1 operando2) -1 0) ; NUEVO
@@ -1101,7 +1108,6 @@
 ; [((10 (PRINT X))) [10 1] [] [] [] 0 {X$ "HOLA MUNDO"}]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;(apply list (concat (apply list (take 2 (rest sentencia))) (list (calcular-expresion (apply list (drop 2 (rest sentencia))) amb))))
 (defn obtener-variable
   [sentencia]
   (first sentencia))
@@ -1203,6 +1209,7 @@
     (= token "=") true
     (= token "<=") true
     (= token ">=") true
+    (= token "<>") true
     :else false))
 
 (defn precedencia
@@ -1215,13 +1222,13 @@
     (= token 'OR) 1
     (= token 'AND) 2
     (= token 'NOT) 3
+    (= token '<>) 4
     (operacion-relacional? (str token)) 4
     (or (= token '+) (= token '-)) 5
     (or (= token '*) (= token '/)) 6
     (es-negacion? token) 7
     (palabra-reservada? token) 8
     :else nil))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; aridad: recibe un token y retorna el valor de su aridad, por
 ; ejemplo:
@@ -1264,10 +1271,6 @@
 ; A
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn obtener-entero
-  [numero]
-  (Integer/parseInt (first (str/split (str numero) #"[.]"))))
-
 (defn obtener-decimales
   [numero]
   (Integer/parseInt (last (str/split (str numero) #"[.]"))))
@@ -1296,6 +1299,8 @@
     (symbol? n) n
     (es-entero? n) n
     :else (armar-numero n)))
+
+(eliminar-cero-decimal 0)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; eliminar-cero-entero: recibe un simbolo y lo retorna convertido
