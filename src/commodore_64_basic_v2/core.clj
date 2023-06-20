@@ -787,9 +787,9 @@
 
 (defn cargar-linea
   [linea amb]
-  (cond 
-    (nil? (linea-ya-cargada? (first linea) (first amb))) (agregar-linea linea amb)
-    :else (reemplazar-linea linea amb)))
+  (if (nil? (linea-ya-cargada? (first linea) (first amb)))
+    (agregar-linea linea amb)
+    (reemplazar-linea linea amb)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
