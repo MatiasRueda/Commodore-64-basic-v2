@@ -423,11 +423,11 @@
     (let [resu-redu
           (reduce
            (fn [pila token]
-             (let [ari (aridad (spy "token" token)),
+             (let [ari (aridad token),
                    resu (eliminar-cero-decimal
                          (case ari
                            1 (aplicar token (first pila) nro-linea)
-                           2 (spy "aplicar" (aplicar token (spy "second" (second pila)) (spy "first" (first pila)) nro-linea))
+                           2 (aplicar token (second pila) (first pila) nro-linea)
                            3 (aplicar token (nth pila 2) (nth pila 1) (nth pila 0) nro-linea)
                            token))]
                (if (nil? resu)
@@ -1298,9 +1298,9 @@
     (string? n) n
     (symbol? n) n
     (es-entero? n) n
-    :else (armar-numero n)))
+    :else (armar-numero (float n))))
 
-(eliminar-cero-decimal 0)
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; eliminar-cero-entero: recibe un simbolo y lo retorna convertido
