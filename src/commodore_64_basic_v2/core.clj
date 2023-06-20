@@ -322,8 +322,8 @@
 ; representacion intermedia del codigo contenido en el
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn cargar-arch [nom nro-linea]
-  (if (.exists (io/file nom))
-    (remove empty? (with-open [rdr (io/reader nom)] (doall (map string-a-tokens (line-seq rdr)))))
+  (if (.exists (clojure.java.io/file nom))
+    (remove empty? (with-open [rdr (clojure.java.io/reader nom)] (doall (map string-a-tokens (line-seq rdr)))))
     (dar-error 6 nro-linea))  ; File not found
   )
 
@@ -333,10 +333,11 @@
 ; retorna el ambiente
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn grabar-arch [nom amb]
-  (let [arch (io/writer nom)]
+  (let [arch (clojure.java.io/writer nom)]
     (do (binding [*out* arch] (mostrar-listado (amb 0)))
         (.close arch)
         amb)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; calcular-expresion: recibe una expresion y un ambiente, y
 ; retorna el valor de la expresion, por ejemplo:
@@ -638,7 +639,6 @@
        <= (if (<= operando1 operando2) -1 0) ; NUEVO
        > (if (> operando1 operando2) -1 0) ; NUEVO
        >= (if (>= operando1 operando2) -1 0) ; NUEVO
-
        + (if (and (string? operando1) (string? operando2))
            (str operando1 operando2)
            (+ operando1 operando2))
@@ -675,13 +675,13 @@
 (defn palabra-reservada?
   [x]
   (contains?
-   #{'ABS 'AND 'ASC 'ATN 'CLOSE 'CLR 'CMD 'CONT 'COS 'DATA 'DEF 'DIM
+   #{'ABS 'AND 'ASC 'ATN 'CHR$ 'CLOSE 'CLR 'CMD 'CONT 'COS 'DATA 'DEF 'DIM
      'END 'ENV 'EXP 'EXIT 'FN 'FOR 'FRE 'GET 'GET# 'GOSUB 'GOTO 'IF 'INPUT 'INPUT# 'INT
      'LEFT$ 'LEN 'LET 'LIST 'LOAD 'LOG 'MID$ 'MID3$ 'NEW 'NEXT 'NOT 'ON 'OPEN 'OR
      'PEEK 'POKE 'POS 'PRINT 'READ 'REM 'RESTORE 'RETURN 'RIGHT$ 'RND
      'RUN 'SAVE 'SGN 'SIN 'SPC 'SQR 'STATUS 'STEP 'STOP 'STR$ 'SYS 'TAB 'TAN
      'THEN 'TIME 'TIME$ 'TO 'USR 'VAL 'VERIFY 'WAIT '? '> '>= '< '<= '<> '= '/ '* '+ '-
-     'CLEAR 'CHR$}
+     'CLEAR}
    x))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1247,12 +1247,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn aridades
   [token]
-  (get {'ABS 1 'AND 2 'ASC 1 'ATN 1 'CLOSE 1 'CLR 0 'CMD 1 'CONT 0 'COS 1 'DATA 1 'DEF 1
+  (get {'ABS 1 'AND 2 'ASC 1 'ATN 1 'CHR$ 1 'CLOSE 1 'CLR 0 'CMD 1 'CONT 0 'COS 1 'DATA 1 'DEF 1
         'DIM 1 'END 0 'EXP 1 'FN 1 'FOR 3 'FRE 1 'GET 1 'GET# 2 'GOSUB 1 'GOTO 1 'IF 2 'INPUT 1 'INPUT# 2 'INT 1
         'LEFT$ 2 'LEN 1 'LET 2 'LIST 1 'LOAD 1 'LOG 1 'MID$ 2 'MID3$ 3 'NEW 0 'NEXT 0 'NOT 1 'ON 1 'OPEN 2 'OR 2
         'PEEK 2 'POKE 2 'POS 1  'PRINT 1 'PRINT# 2 'READ 1  'REM 1 'RESTORE 0 'RETURN 0 'RIGHT$ 2 'RND 1
         'RUN 1 'SAVE 2 'SGN 1 'SIN 1 'SPC 1 'SQR 1 'STATUS 0 'STEP 0 'STOP 0 'STR$ 1 'SYS 1 'TAB 1 'TAN 1 '-u 1
-        'THEN 0 'TIME 0 'TIME$ 0 'TO 0 'USR 1 'VAL 1 'VERIFY 0 'WAIT 2 '+ 2 '- 2 '* 2 '/ 2 '↑ 2 '< 2 '<= 2 '= 2 '> 2 '=> 2 '<> 2}
+        'THEN 0 'TIME 0 'TIME$ 0 'TO 0 'USR 1 'VAL 1 'VERIFY 0 'WAIT 2 '+ 2 '- 2 '* 2 '/ 2 '↑ 2 '< 2 '<= 2 '= 2 '> 2 '>= 2 '<> 2}
        token))
 
 
