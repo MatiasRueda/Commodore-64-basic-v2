@@ -427,7 +427,7 @@
                    resu (eliminar-cero-decimal
                          (case ari
                            1 (aplicar token (first pila) nro-linea)
-                           2 (spy "aplicar" (aplicar token (second pila) (first pila) nro-linea))
+                           2 (spy "aplicar" (aplicar token (spy "second" (second pila)) (spy "first" (first pila)) nro-linea))
                            3 (aplicar token (nth pila 2) (nth pila 1) (nth pila 0) nro-linea)
                            token))]
                (if (nil? resu)
@@ -644,7 +644,7 @@
        * (* operando1 operando2) ; NUEVO
        / (if (= operando2 0) (dar-error 133 nro-linea) (/ operando1 operando2))  ; Division by zero error
        AND (let [op1 (+ 0 operando1), op2 (+ 0 operando2)] (if (and (not= op1 0) (not= op2 0)) -1 0))
-       OR (let [op1 (+ 0 operando1), op2 (+ 0 operando2)] (if (or (= op1 0) (= op2 0)) -1 0)) ; NUEVO
+       OR (let [op1 (+ 0 operando1), op2 (+ 0 operando2)] (if (and (= op1 0) (= op2 0)) 0 -1)) ; NUEVO
        MID$ (if (< operando2 1)
               (dar-error 53 nro-linea)  ; Illegal quantity error
               (let [ini (dec operando2)] (if (>= ini (count operando1)) "" (subs operando1 ini)))))))
