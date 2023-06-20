@@ -773,9 +773,24 @@
 ; user=> (cargar-linea '(15 (X = X - 1)) ['((10 (PRINT X)) (15 (X = X + 1)) (20 (X = 100))) [:ejecucion-inmediata 0] [] [] [] 0 {}])
 ; [((10 (PRINT X)) (15 (X = X - 1)) (20 (X = 100))) [:ejecucion-inmediata 0] [] [] [] 0 {}]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn cargar-linea
+(defn linea-ya-cargada?
+  [nro-linea sentencias]
+  (some (fn [sentencia] (= (first sentencia) nro-linea)) sentencias))
+
+(defn reemplazar-linea
+  [linea amb]
+  (assoc amb 0 (map (fn [sentencia] (if (= (first sentencia) (first linea)) linea sentencia)) (first amb))))
+
+(defn agregar-linea
   [linea amb]
   (apply vector (cons (sort-by first (concat (first (take 1 amb)) (list linea))) (drop 1 amb))))
+
+(defn cargar-linea
+  [linea amb]
+  (cond 
+    (nil? (linea-ya-cargada? (first linea) (first amb))) (agregar-linea linea amb)
+    :else (reemplazar-linea linea amb)))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; expandir-nexts: recibe una lista de sentencias y la devuelve con
