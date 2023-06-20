@@ -1,5 +1,6 @@
 (ns commodore-64-basic-v2.core
-  (:gen-class))
+  (:gen-class) 
+  (:require [clojure.string :as str]))
 
 (require '[clojure.string :as str])
 
@@ -347,9 +348,6 @@
 (defn calcular-expresion [expr amb]
   (calcular-rpn (spy "Esto da sy" (shunting-yard (desambiguar (preprocesar-expresion expr amb)))) (amb 1)))
 
-;(+ (calcular-expresion '(- 1) '[() [:ejecucion-inmediata 0] [] [] [] 0 {}]) 1)
-
-;(calcular-rpn '(L "MATIAS" MID$) '[() [:ejecucion-inmediata 1] [] [[I 1 -1 [:ejecucion-inmediata 1]]] [] 0 {I L}])
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; desambiguar-mas-menos: recibe una expresion y la retorna sin
 ; los + unarios y con los - unarios reemplazados por -u  
@@ -536,7 +534,7 @@
       DATA [:sin-errores (assoc amb 4 (agregar-data (amb 4) (rest sentencia)))]; NUEVO 
       RESTORE [:sin-errores (assoc amb 4 [])] ; NUEVO
       CLEAR [:sin-errores (assoc amb 6 {})]; NUEVO
-      LET [:sin-errores (ejecutar-asignacion (apply list (concat (apply list (take 2 (rest sentencia))) (list (calcular-expresion (apply list (drop 2 (rest sentencia))) amb)))) amb)]; NUEVO
+      LET (evaluar (rest sentencia) amb) ;NUEVO
       LIST (if (nil? (println (first amb))) [:sin-errores amb] [nil amb]); NUEVO
       NEW [:sin-errores ['() [:ejecucion-inmediata 0] [] [] [] 0 {}]]  ; [(prog-mem)  [prog-ptrs]  [gosub-return-stack]  [for-next-stack]  [data-mem]  data-ptr  {var-mem}]
       RUN (cond
@@ -1087,54 +1085,19 @@
 ; user=> (ejecutar-asignacion '(X$ = X$ + " MUNDO") ['((10 (PRINT X))) [10 1] [] [] [] 0 '{X$ "HOLA"}])
 ; [((10 (PRINT X))) [10 1] [] [] [] 0 {X$ "HOLA MUNDO"}]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn potencia
-  [numero elevado]
-  (if (zero? elevado) 1 (* numero (potencia numero (- elevado 1)))))
 
-(defn aplicar-operacion-numero
-  [operador valor1 valor2]
-  (cond
-    (= operador "+") (+ valor1 valor2)
-    (= operador "-") (- valor1 valor2)
-    (= operador "*") (* valor1 valor2)
-    (= operador "/") (/ valor1 valor2)
-    (= operador "-") (- valor1 valor2)
-    (= operador "↑") (potencia valor1 valor2)
-    :else nil))
-
-
+;;(apply list (concat (apply list (take 2 (rest sentencia))) (list (calcular-expresion (apply list (drop 2 (rest sentencia))) amb))))
 (defn obtener-variable
   [sentencia]
-  (symbol (first (str/split (apply str (drop-last (drop 1 (str sentencia)))) #" "))))
+  (first sentencia))
 
-(defn es-entero?
-  [simbolo]
-  (if (= (count (re-find #"\d+" (str simbolo))) (count (str simbolo))) true false))
-
-(defn obtener-valor-string
+(defn obtener-asignacion
   [sentencia]
-  (last sentencia))
-
-(defn obtener-operador
-  [sentencia]
-  (nth (str/split (apply str (drop-last (drop 1 (str sentencia)))) #" ") 3))
-
-(defn colocar-el-ambiente
-  [sentencia amb]
-  (conj (apply  vector (drop-last amb)) (assoc (last amb) (obtener-variable sentencia) (obtener-valor-string sentencia))))
-
-(defn armar-sentencia
-  [sentencia amb]
-  (cond
-    (= (count sentencia) 3) sentencia
-    (= (str (last (str (obtener-variable sentencia)))) "$") (concat (list (obtener-variable sentencia)) '(=) (list (apply str (concat (get (last amb) (obtener-variable sentencia)) (obtener-valor-string sentencia)))))
-    :else (concat (list (obtener-variable sentencia)) '(=) (list (aplicar-operacion-numero (obtener-operador sentencia) (get (last amb) (obtener-variable sentencia)) (obtener-valor-string sentencia))))))
+  (drop 2 sentencia))
 
 (defn ejecutar-asignacion
   [sentencia amb]
-  (if (contains? (last amb) (obtener-variable sentencia))
-    (colocar-el-ambiente (apply list (armar-sentencia sentencia amb)) amb)
-    (colocar-el-ambiente sentencia amb)))
+  (assoc amb  6 (assoc (last amb) (obtener-variable sentencia) (calcular-expresion (obtener-asignacion sentencia) amb))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; preprocesar-expresion: recibe una expresion y la retorna con
