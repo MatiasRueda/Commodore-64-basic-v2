@@ -234,6 +234,7 @@
     (is (= (eliminar-cero-decimal -1) -1)) 
     (is (= (eliminar-cero-decimal -1.0) -1))
     (is (= (eliminar-cero-decimal -0.533) -0.533))
+    (is (= (eliminar-cero-decimal 2.089) 2.089))
     (is (= (eliminar-cero-decimal "Holaa") "Holaa")))) 
 
 (deftest eliminar-cero-entero-test 

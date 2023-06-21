@@ -1276,25 +1276,26 @@
 (defn obtener-decimales
   [numero]
   (if (= (count (str/split (str numero) #"[.]")) 2)
-    (Integer/parseInt (last (str/split (str numero) #"[.]")))
+    (last (str/split (str numero) #"[.]"))
     nil))
 
 (defn recorrer-numero
   [cantidad-innecesario numero]
-  (if (or (empty? numero) (= (str (first numero)) ".") (not (= (str (first numero)) "0")))
+  (if (or (empty? numero) (not (= (str (first numero)) "0")))
     cantidad-innecesario
     (recorrer-numero (+ cantidad-innecesario 1) (drop 1 numero))))
 
+
 (defn sacar-innecesarios
-  [numero]
-  (apply str (drop-last (recorrer-numero 0 (reverse (str numero))) (str numero))))
+  [numero-str]
+  (apply str (drop-last (recorrer-numero 0 (reverse numero-str)) (str numero-str))))
 
 (defn armar-numero
   [numero]
   (cond
-    (zero? (count (sacar-innecesarios (obtener-decimales (str numero))))) (obtener-entero numero)
-    (neg? numero) (* -1 (Double/parseDouble (format "%s.%s" (str (obtener-entero numero)) (sacar-innecesarios (obtener-decimales (str numero))))))
-    :else (Double/parseDouble (format "%s.%s" (str (obtener-entero numero)) (sacar-innecesarios (obtener-decimales (str numero)))))))
+    (zero? (count (sacar-innecesarios (obtener-decimales numero)))) (obtener-entero numero)
+    (neg? numero) (* -1 (Double/parseDouble (format "%s.%s" (str (obtener-entero numero)) (sacar-innecesarios (obtener-decimales numero)))))
+    :else (Double/parseDouble (format "%s.%s" (str (obtener-entero numero)) (sacar-innecesarios (obtener-decimales numero))))))
 
 (defn eliminar-cero-decimal
   [n]
@@ -1304,7 +1305,6 @@
     (symbol? n) n
     (es-entero? n) n
     :else (armar-numero (float n))))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; eliminar-cero-entero: recibe un simbolo y lo retorna convertido
@@ -1358,7 +1358,7 @@
     (es-entero? n) (format " %s" (str n))
     :else "nil"))
 
-
+(* 3 (Math/log 2))
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
