@@ -329,7 +329,8 @@
     (is (= (eliminar-cero-entero -1) "-1"))
     (is (= (eliminar-cero-entero -1.5) "-1.5"))
     (is (= (eliminar-cero-entero 0.5) " .5"))
-    (is (= (eliminar-cero-entero -0.5) "-.5")))) 
+    (is (= (eliminar-cero-entero -0.5) "-.5")) 
+    (is (= (eliminar-cero-entero "Holaa") "Holaa")))) 
 
 
 

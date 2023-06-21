@@ -606,10 +606,6 @@
 ; resultante (si ocurre un error, muestra un mensaje y retorna
 ; nil)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn obtener-entero
-  [numero]
-  (Integer/parseInt (first (str/split (str numero) #"[.]"))))
-
 
 (defn aplicar
   ([operador operando nro-linea]
@@ -625,7 +621,7 @@
        ASC (if (string? operando) (int (first operando)) (dar-error 163 nro-linea)) 
        STR$ (if (not (number? operando)) (dar-error 163 nro-linea) (eliminar-cero-entero operando)) ; Type mismatch error
        CHR$ (if (or (< operando 0) (> operando 255)) (dar-error 53 nro-linea) (str (char operando))) ; Illegal quantity error 
-       INT (if (number? operando) (obtener-entero operando) (dar-error 163 nro-linea))))) 
+       INT (if (number? operando) (int operando) (dar-error 163 nro-linea))))) 
   
   ([operador operando1 operando2 nro-linea]
    (if (or (nil? operando1) (nil? operando2))
@@ -1285,25 +1281,27 @@
     cantidad-innecesario
     (recorrer-numero (+ cantidad-innecesario 1) (drop 1 numero))))
 
-
 (defn sacar-innecesarios
   [numero-str]
   (apply str (drop-last (recorrer-numero 0 (reverse numero-str)) (str numero-str))))
 
+(defn armar-numero-decimal
+  [numero]
+  (format "%s.%s" (str (int numero)) (sacar-innecesarios (obtener-decimales numero))))
+
 (defn armar-numero
   [numero]
   (cond
-    (zero? (count (sacar-innecesarios (obtener-decimales numero)))) (obtener-entero numero)
-    (neg? numero) (* -1 (Double/parseDouble (format "%s.%s" (str (obtener-entero numero)) (sacar-innecesarios (obtener-decimales numero)))))
-    :else (Double/parseDouble (format "%s.%s" (str (obtener-entero numero)) (sacar-innecesarios (obtener-decimales numero))))))
+    (zero? (count (sacar-innecesarios (obtener-decimales numero)))) (int numero)
+    (neg? numero) (- (Double/parseDouble (armar-numero-decimal numero)))
+    :else (Double/parseDouble (armar-numero-decimal numero))))
 
 (defn eliminar-cero-decimal
   [n]
   (cond
-    (neg-int? n) n
+    (integer? n) n
     (string? n) n
-    (symbol? n) n
-    (es-entero? n) n
+    (symbol? n) n 
     :else (armar-numero (float n))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
