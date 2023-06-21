@@ -96,6 +96,16 @@
            '((PRINT 1) (NEXT A) (NEXT B))))))
 
 
+
+(deftest continuar-linea-test
+  (testing "retornando una dupla (un vector) con un resultado (usado luego porevaluar-linea) y un ambiente actualizado con el nuevo valor del puntero de programa"
+    (is (= (continuar-linea [(list '(10 (PRINT X)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [20 3] [] [] [] 0 {}])
+           [nil [(list '(10 (PRINT X)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [20 3] [] [] [] 0 {}]]))
+    (is (= (with-out-str (continuar-linea [(list '(10 (PRINT X)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [20 3] [] [] [] 0 {}]))
+           (with-out-str (print "?RETURN WITHOUT GOSUB  ERROR IN 20"))))
+    (is (= (continuar-linea [(list '(10 (PRINT X)) '(15 (GOSUB 100) (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [20 3] [[15 2]] [] [] 0 {}])
+           [:omitir-restante [(list '(10 (PRINT X)) '(15 (GOSUB 100) (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [15 1] [] [] [] 0 {}]]))))
+
 (deftest dar-error-test 
   (testing "Devuelve lo pedido" 
     (is (= (with-out-str (dar-error 16 [:ejecucion-inmediata 4]))  (with-out-str (print "?SYNTAX  ERROR")))) 

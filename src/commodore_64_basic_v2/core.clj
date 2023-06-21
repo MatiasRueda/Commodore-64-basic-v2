@@ -1050,7 +1050,7 @@
   [amb]
   (cond
     (empty? (amb 2)) (do (dar-error 22 (amb 1)) [nil amb])
-    :else (armar-nuevo-amb amb (apply vector (drop 1 (amb 2))) (assoc (last (amb 2)) 1 (- (last (last (amb 2))) 1)) )))
+    :else [:omitir-restante (armar-nuevo-amb amb (apply vector (drop 1 (amb 2))) (assoc (last (amb 2)) 1 (- (last (last (amb 2))) 1)) )]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; extraer-data: recibe la representación intermedia de un programa
