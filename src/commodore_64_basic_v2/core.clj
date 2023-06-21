@@ -687,7 +687,7 @@
   (contains?
    #{'ENV 'LOAD 'SAVE 'RUN 'EXIT 'INPUT 'PRINT '? 'DATA 'READ 'REM 'RESTORE 'CLEAR 'LET 
      'LIST 'NEW 'END 'FOR 'TO 'NEXT 'STEP 'GOSUB 'RETURN 'GOTO 'IF 'THEN 'ON 'ATN 'INT 'SIN
-     'EXP 'LOG 'LEN 'MID$ 'ASC 'CHR$ 'STR$ 'OR 'AND '> '>= '< '<= '<> '= '/ '* '+ '- }
+     'EXP 'LOG 'LEN 'MID$ 'MID3$ 'ASC 'CHR$ 'STR$ 'OR 'AND '> '>= '< '<= '<> '= '/ '* '+ '- }
    x))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1192,40 +1192,19 @@
 ; user=> (precedencia 'MID$)
 ; 8
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn lista-contiene
-  [palabra caracter]
-  (contains? (into #{} (str palabra)) caracter))
-
-(defn es-negacion?
-  [token]
-  (lista-contiene token '"-"))
-
-(defn operacion-relacional?
-  [token]
-  (cond
-    (= token "<") true
-    (= token ">") true
-    (= token "=") true
-    (= token "<=") true
-    (= token ">=") true
-    (= token "<>") true
-    :else false))
+(def operaciones-relacionales #{'< '> '= '<= '>= '<>})
 
 (defn precedencia
   [token]
   (cond
     (= token (symbol ",")) 0
     (= token '-u) 7
-    (= token 'MID$) 8
-    (= token 'MID3$) 8
     (= token 'OR) 1
     (= token 'AND) 2
     (= token 'NOT) 3
-    (= token '<>) 4
-    (operacion-relacional? (str token)) 4
+    (contains? operaciones-relacionales token) 4
     (or (= token '+) (= token '-)) 5
     (or (= token '*) (= token '/)) 6
-    (es-negacion? token) 7
     (palabra-reservada? token) 8
     :else nil))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
