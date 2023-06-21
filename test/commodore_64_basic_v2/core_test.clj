@@ -77,7 +77,20 @@
 
 (deftest anular-invalidos-test
   (testing "Devuelve lo pedido" 
-    (is (= (anular-invalidos '(IF X & * Y < 12 THEN LET ! X = 0)) '(IF X nil * Y < 12 THEN LET nil X = 0)))))
+    (is (= (anular-invalidos '(IF X & * Y < 12 THEN LET ! X = 0)) 
+           '(IF X nil * Y < 12 THEN LET nil X = 0)))
+    (is (= (anular-invalidos '(LET X$ = MID$ (STR$ (B), 2, 1) + X$))
+           '(LET X$ = MID$ (STR$ (B), 2, 1) + X$)))
+    (is (= (anular-invalidos (list 'PRINT "(GREATER OR EQUAL THAN ZERO)" (symbol ":") 'INPUT 'A))
+           (list 'PRINT "(GREATER OR EQUAL THAN ZERO)" (symbol ":") 'INPUT 'A)))
+    (is (= (anular-invalidos (list 'PRINT "AS DECIMAL: " (symbol ";") 'S))
+           (list 'PRINT "AS DECIMAL: " (symbol ";") 'S)))
+    (is (= (anular-invalidos (list 3 (symbol "||") 5))
+           (list 3 nil 5)))
+    (is (= (anular-invalidos '(LET B$ = MID$ (N$, L-I+1, 1)))
+           '(LET B$ = MID$ (N$, L-I+1, 1))))
+    (is (= (anular-invalidos '(ON CH GOTO 200, 340, 420))
+           '(ON CH GOTO 200, 340, 420)))))
 
 
 (deftest cargar-linea-test

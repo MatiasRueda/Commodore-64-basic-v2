@@ -757,15 +757,13 @@
     (not (= (count (str simbolo)) (+ (cantidad-letras simbolo) (cantidad-numeros simbolo)))) false
     :else true))
 
+(def simbolos-aceptados #{(symbol ")")  (symbol "(") (symbol ".") (symbol ",") (symbol ";") (symbol ":")})
+
+
 (defn simbolo-valido?
   [simbolo]
   (cond
-    (= simbolo (symbol ")")) true
-    (= simbolo (symbol "(")) true
-    (= simbolo (symbol ".")) true
-    (= simbolo (symbol ",")) true
-    (= simbolo (symbol ";")) true
-    (= simbolo (symbol ":")) true
+    (contains? simbolos-aceptados simbolo) true
     (palabra-reservada? simbolo) true
     (operador? simbolo) true
     (number? simbolo) true
@@ -802,7 +800,7 @@
 
 (defn agregar-linea
   [linea amb]
-  (apply vector (cons (sort-by first (concat (first (take 1 amb)) (list linea))) (drop 1 amb))))
+  (assoc amb 0 (sort-by first (concat (first (take 1 amb)) (list linea)))))
 
 (defn cargar-linea
   [linea amb]
@@ -1083,7 +1081,6 @@
   [simbolos]
   (filter (fn [simbolo] (not (= (symbol ",") simbolo))) simbolos))
 
-;USAR TAKE 
 (defn obtener-indice-rem
   [sentencia]
   (first (reduce (fn [acc x] (if (= (first (second x)) 'REM) (reduced (conj (drop 1 acc) (first x))) acc)) '(-1) (map-indexed list (rest sentencia)))))
@@ -1161,17 +1158,11 @@
     (pertenece-variable-al-amb? variable amb) (get (obtener-variables-amb amb) variable)
     :else (reemplazar-variable-no-existente variable)))
 
-(defn simbolo-de-expresion? 
-  [simbolo] 
-  (cond 
-    (= simbolo (symbol ",")) true
-    (= simbolo (symbol "(")) true
-    (= simbolo (symbol ")")) true
-    :else false))
+(def expresiones-aceptadas #{(symbol ",") (symbol "(") (symbol ")")})
 
 (defn preprocesar-expresion
   [expr amb]
-  (map (fn [x] (if (or (operador? x) (palabra-reservada? x) (simbolo-de-expresion? x)) x (verificar-reemplazo x amb))) expr))
+  (map (fn [x] (if (or (operador? x) (palabra-reservada? x) (contains? expresiones-aceptadas x)) x (verificar-reemplazo x amb))) expr))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1367,7 +1358,6 @@
     (es-entero? n) (format " %s" (str n))
     :else "nil"))
 
-(* 3 (Math/log 2))
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
