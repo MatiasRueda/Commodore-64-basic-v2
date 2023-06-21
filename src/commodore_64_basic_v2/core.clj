@@ -676,13 +676,9 @@
 (defn palabra-reservada?
   [x]
   (contains?
-   #{'ABS 'AND 'ASC 'ATN 'CHR$ 'CLOSE 'CLR 'CMD 'CONT 'COS 'DATA 'DEF 'DIM
-     'END 'ENV 'EXP 'EXIT 'FN 'FOR 'FRE 'GET 'GET# 'GOSUB 'GOTO 'IF 'INPUT 'INPUT# 'INT
-     'LEFT$ 'LEN 'LET 'LIST 'LOAD 'LOG 'MID$ 'MID3$ 'NEW 'NEXT 'NOT 'ON 'OPEN 'OR
-     'PEEK 'POKE 'POS 'PRINT 'READ 'REM 'RESTORE 'RETURN 'RIGHT$ 'RND
-     'RUN 'SAVE 'SGN 'SIN 'SPC 'SQR 'STATUS 'STEP 'STOP 'STR$ 'SYS 'TAB 'TAN
-     'THEN 'TIME 'TIME$ 'TO 'USR 'VAL 'VERIFY 'WAIT '? '> '>= '< '<= '<> '= '/ '* '+ '-
-     'CLEAR}
+   #{'ENV 'LOAD 'SAVE 'RUN 'EXIT 'INPUT 'PRINT '? 'DATA 'READ 'REM 'RESTORE 'CLEAR 'LET 
+     'LIST 'NEW 'END 'FOR 'TO 'NEXT 'STEP 'GOSUB 'RETURN 'GOTO 'IF 'THEN 'ON 'ATN 'INT 'SIN
+     'EXP 'LOG 'LEN 'MID$ 'ASC 'CHR$ 'STR$ 'OR 'AND '> '>= '< '<= '<> '= '/ '* '+ '- }
    x))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1248,14 +1244,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn aridades
   [token]
-  (get {'ABS 1 'AND 2 'ASC 1 'ATN 1 'CHR$ 1 'CLOSE 1 'CLR 0 'CMD 1 'CONT 0 'COS 1 'DATA 1 'DEF 1
-        'DIM 1 'END 0 'EXP 1 'FN 1 'FOR 3 'FRE 1 'GET 1 'GET# 2 'GOSUB 1 'GOTO 1 'IF 2 'INPUT 1 'INPUT# 2 'INT 1
-        'LEFT$ 2 'LEN 1 'LET 2 'LIST 1 'LOAD 1 'LOG 1 'MID$ 2 'MID3$ 3 'NEW 0 'NEXT 0 'NOT 1 'ON 1 'OPEN 2 'OR 2
-        'PEEK 2 'POKE 2 'POS 1  'PRINT 1 'PRINT# 2 'READ 1  'REM 1 'RESTORE 0 'RETURN 0 'RIGHT$ 2 'RND 1
-        'RUN 1 'SAVE 2 'SGN 1 'SIN 1 'SPC 1 'SQR 1 'STATUS 0 'STEP 0 'STOP 0 'STR$ 1 'SYS 1 'TAB 1 'TAN 1 '-u 1
-        'THEN 0 'TIME 0 'TIME$ 0 'TO 0 'USR 1 'VAL 1 'VERIFY 0 'WAIT 2 '+ 2 '- 2 '* 2 '/ 2 '↑ 2 '< 2 '<= 2 '= 2 '> 2 '>= 2 '<> 2}
+  (get {'AND 2 'ASC 1 'ATN 1 'CHR$ 1 'DATA 1 
+        'EXP 1 'FOR 3 'GOSUB 1 'GOTO 1 'IF 2 'INPUT 1 'INT 1
+        'LEN 1 'LET 2 'LIST 0 'LOAD 1 'LOG 1 'MID$ 2 'MID3$ 3 'NEW 0 'NEXT 0 'NOT 1 'ON 1  'OR 2
+        'PRINT 1 '? 1 'READ 1 'REM 1 'RESTORE 0 'RETURN 0 
+        'RUN 0 'SAVE 1 'SIN 1 'STEP 0 'STR$ 1 '-u 1
+        'THEN 0 'TO 0 '+ 2 '- 2 '* 2 '/ 2  '< 2 '<= 2 '= 2 '> 2 '>= 2 '<> 2}
        token))
-
 
 (defn aridad
   [token]
