@@ -1329,17 +1329,10 @@
 ; user=> (eliminar-cero-entero -0.5)
 ; "-.5"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn es-flotante?
-  [numero-string]
-  (some (fn [caracter] (= (str caracter) ".")) numero-string))
-
-(defn es-negativo?
-  [numero-string]
-  (= (str (first numero-string)) "-"))
 
 (defn sacar-negativo
   [simbolo]
-  (apply str (drop 1 (str simbolo))))
+  (apply str (rest (str simbolo))))
 
 (defn primer-caracter-es-cero
   [numero-string]
@@ -1349,14 +1342,16 @@
   [n]
   (cond
     (nil? n) nil
-    (and (es-negativo? (str n)) (es-flotante? (sacar-negativo n)) (primer-caracter-es-cero (sacar-negativo n))) (format "-%s" (apply str (drop 1 (sacar-negativo n))))
-    (and (es-flotante? (str n)) (primer-caracter-es-cero (str n))) (format " %s" (apply str (drop 1 (str n))))
-    (and (es-flotante? (str n)) (es-negativo? (str n))) (str n)
-    (es-flotante? (str n)) (format " %s" (str n))
-    (not (es-entero? n)) (str n)
-    (and (es-negativo? (str n)) (es-entero? (sacar-negativo n))) (str n)
-    (es-entero? n) (format " %s" (str n))
-    :else "nil"))
+    (symbol? n) (str n)
+    (string? n) n
+    (and (neg? n) 
+         (float? n) 
+         (primer-caracter-es-cero (sacar-negativo n))) (format "-%s" (apply str (rest (sacar-negativo n))))
+    (and (float? n) 
+         (primer-caracter-es-cero (str n))) (format " %s" (apply str (rest (str n))))
+    (and (neg? n)
+         (or (float? n) (integer? n))) (str n) 
+    :else (format " %s" (str n))))
 
 (defn -main
   "I don't do a whole lot ... yet."
