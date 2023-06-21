@@ -530,12 +530,13 @@
              (do (dar-error 201 (amb 1)) [nil amb]))  ; Save within program error
       REM [:omitir-restante amb]
       END [nil amb]
-      DATA [:sin-errores (assoc amb 4 (agregar-data (amb 4) (rest sentencia)))]; NUEVO 
+      ? (evaluar (assoc sentencia 0 'PRINT) amb)
+      DATA [:sin-errores (assoc amb 4 (agregar-data (amb 4) (rest sentencia)))] 
       READ (leer-data (rest sentencia) amb)
-      RESTORE [:sin-errores (assoc amb 5 0)] ; NUEVO
-      CLEAR [:sin-errores (assoc amb 6 {})]; NUEVO
-      LET (evaluar (rest sentencia) amb) ;NUEVO
-      LIST (if (nil? (println (first amb))) [:sin-errores amb] [nil amb]); NUEVO
+      RESTORE [:sin-errores (assoc amb 5 0)] 
+      CLEAR [:sin-errores (assoc amb 6 {})]
+      LET (evaluar (rest sentencia) amb) 
+      LIST (if (nil? (println (first amb))) [:sin-errores amb] [nil amb])
       NEW [:sin-errores ['() [:ejecucion-inmediata 0] [] [] [] 0 {}]]  ; [(prog-mem)  [prog-ptrs]  [gosub-return-stack]  [for-next-stack]  [data-mem]  data-ptr  {var-mem}]
       RUN (cond
             (empty? (amb 0)) [:sin-errores amb]  ; no hay programa
@@ -617,14 +618,14 @@
      (case operador
        -u (- operando)
        LEN (count operando)
-       SIN (Math/sin operando)
-       ATN (Math/atan operando)
-       EXP (Math/exp operando)
-       LOG (Math/log operando)
-       ASC (int (first operando)) ; NUEVO
+       SIN (if (number? operando) (Math/sin operando) (dar-error 163 nro-linea))
+       ATN (if (number? operando) (Math/atan operando) (dar-error 163 nro-linea))
+       EXP (if (number? operando) (Math/exp operando) (dar-error 163 nro-linea))
+       LOG (if (number? operando) (Math/log operando) (dar-error 163 nro-linea))
+       ASC (if (string? operando) (int (first operando)) (dar-error 163 nro-linea)) 
        STR$ (if (not (number? operando)) (dar-error 163 nro-linea) (eliminar-cero-entero operando)) ; Type mismatch error
        CHR$ (if (or (< operando 0) (> operando 255)) (dar-error 53 nro-linea) (str (char operando))) ; Illegal quantity error 
-       INT (obtener-entero operando)))) 
+       INT (if (number? operando) (obtener-entero operando) (dar-error 163 nro-linea))))) 
   
   ([operador operando1 operando2 nro-linea]
    (if (or (nil? operando1) (nil? operando2))
@@ -635,19 +636,31 @@
            (if (= (+ 0 operando1) (+ 0 operando2)) -1 0))
        <> (if (and (string? operando1) (string? operando2))
             (if (= operando1 operando2) 0 -1)
-            (if (= (+ 0 operando1) (+ 0 operando2)) 0 -1)) ; NUEVO
-       < (if (< operando1 operando2) -1 0) ; NUEVO
-       <= (if (<= operando1 operando2) -1 0) ; NUEVO
-       > (if (> operando1 operando2) -1 0) ; NUEVO
-       >= (if (>= operando1 operando2) -1 0) ; NUEVO
+            (if (= (+ 0 operando1) (+ 0 operando2)) 0 -1)) 
+       < (if (or (string? operando1) (string? operando2))
+           (dar-error 163 nro-linea)
+           (if (< operando1 operando2) -1 0)) 
+       <= (if (or (string? operando1) (string? operando2))
+            (dar-error 163 nro-linea)
+            (if (<= operando1 operando2) -1 0)) 
+       > (if (or (string? operando1) (string? operando2))
+           (dar-error 163 nro-linea)
+           (if (> operando1 operando2) -1 0)) 
+       >= (if (or (string? operando1) (string? operando2))
+            (dar-error 163 nro-linea)
+            (if (>= operando1 operando2) -1 0)) 
        + (if (and (string? operando1) (string? operando2))
            (str operando1 operando2)
            (+ operando1 operando2))
-       - (- operando1 operando2)
-       * (* operando1 operando2) ; NUEVO
+       - (if (or (string? operando1) (string? operando2))
+           (dar-error 163 nro-linea)
+           (- operando1 operando2))
+       * (if (or (string? operando1) (string? operando2))
+           (dar-error 163 nro-linea)
+           (* operando1 operando2))
        / (if (= operando2 0) (dar-error 133 nro-linea) (/ operando1 operando2))  ; Division by zero error
        AND (let [op1 (+ 0 operando1), op2 (+ 0 operando2)] (if (and (not= op1 0) (not= op2 0)) -1 0))
-       OR (let [op1 (+ 0 operando1), op2 (+ 0 operando2)] (if (and (= op1 0) (= op2 0)) 0 -1)) ; NUEVO
+       OR (let [op1 (+ 0 operando1), op2 (+ 0 operando2)] (if (and (= op1 0) (= op2 0)) 0 -1)) 
        MID$ (if (< operando2 1)
               (dar-error 53 nro-linea)  ; Illegal quantity error
               (let [ini (dec operando2)] (if (>= ini (count operando1)) "" (subs operando1 ini)))))))
