@@ -531,7 +531,8 @@
       REM [:omitir-restante amb]
       END [nil amb]
       DATA [:sin-errores (assoc amb 4 (agregar-data (amb 4) (rest sentencia)))]; NUEVO 
-      RESTORE [:sin-errores (assoc amb 4 [])] ; NUEVO
+      READ (leer-data (rest sentencia) amb)
+      RESTORE [:sin-errores (assoc amb 5 0)] ; NUEVO
       CLEAR [:sin-errores (assoc amb 6 {})]; NUEVO
       LET (evaluar (rest sentencia) amb) ;NUEVO
       LIST (if (nil? (println (first amb))) [:sin-errores amb] [nil amb]); NUEVO
