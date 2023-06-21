@@ -3,11 +3,6 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as str]))
 
-(defn spy
-  ([x] (do (prn x) x))
-  ([msg x] (do (print msg) (print ": ") (prn x) x)))
-
-
 (declare driver-loop)                     ; NO TOCAR
 (declare string-a-tokens)                 ; NO TOCAR
 (declare evaluar-linea)                   ; NO TOCAR
@@ -834,7 +829,9 @@
 
 (defn expando
   [sentencia]
-  (map (fn [simbolo] (cons 'NEXT (list simbolo))) (filter (fn [x] (not (= x (symbol ",")))) (obtener-simbolos sentencia))))
+  (map 
+   (fn [simbolo] (cons 'NEXT (list simbolo))) 
+   (filter (fn [x] (not (= x (symbol ",")))) (obtener-simbolos sentencia))))
 
 (defn expandirlos
   [sentencias]
@@ -969,8 +966,6 @@
     nil
     (count (expandir-nexts (drop 1 (obtener-sentencia '() (first amb) nro-linea))))))
 
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; buscar-lineas-restantes: recibe un ambiente y retorna la
 ; representacion intermedia del programa a partir del puntero de
@@ -1065,13 +1060,13 @@
 ; user=> (extraer-data (list '(10 (PRINT X) (REM ESTE NO) (DATA 30)) '(20 (DATA HOLA)) (list 100 (list 'DATA 'MUNDO (symbol ",") 10 (symbol ",") 20))))
 ; ("HOLA" "MUNDO" 10 20)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn es-entero?
+(defn es-un-numero?
   [simbolo]
-  (if (= (count (re-find #"\d+" (str simbolo))) (count (str simbolo))) true false))
+  (= (count (re-find #"\d+" (str simbolo))) (count (str simbolo))))
 
 (defn devolver-segun-tipo
   [simbolos]
-  (map (fn [simbolo] (if (es-entero? (str simbolo)) simbolo (str simbolo))) simbolos))
+  (map (fn [simbolo] (if (es-un-numero? (str simbolo)) simbolo (str simbolo))) simbolos))
 
 (defn sacar-comas
   [simbolos]
@@ -1079,7 +1074,9 @@
 
 (defn obtener-indice-rem
   [sentencia]
-  (first (reduce (fn [acc x] (if (= (first (second x)) 'REM) (reduced (conj (drop 1 acc) (first x))) acc)) '(-1) (map-indexed list (rest sentencia)))))
+  (first (reduce (fn [acc x] (if (= (first (second x)) 'REM) (reduced (conj (drop 1 acc) (first x))) acc)) 
+                 '(-1) 
+                 (map-indexed list (rest sentencia)))))
 
 (defn limpiar-rems 
   [prg]
@@ -1123,7 +1120,9 @@
 
 (defn ejecutar-asignacion
   [sentencia amb]
-  (assoc amb  6 (assoc (last amb) (obtener-variable sentencia) (calcular-expresion (obtener-asignacion sentencia) amb))))
+  (assoc amb  6 (assoc (last amb) 
+                       (obtener-variable sentencia) 
+                       (calcular-expresion (obtener-asignacion sentencia) amb))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; preprocesar-expresion: recibe una expresion y la retorna con
