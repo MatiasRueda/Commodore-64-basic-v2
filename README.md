@@ -6,6 +6,9 @@
 Trabajo practico de la materia lenguajes formales de la Facultad de Ingeniería Universidad de Buenos Aires
 La idea detrás de este proyecto es simular lo mas posible a una maquina Commodore 64 basic V2, utilizando programación funcional, en este caso, para cumplir esto ultimo se utiliza Clojure.
 
+## Tipo de proyecto
+Proyecto individual.
+
 ## Tecnologías usadas
 - Clojure
 
