@@ -1,44 +1,31 @@
-# commodore-64-basic-v2
 
-FIXME: description
+# Commodore 64 basic v2
 
-## Installation
+## Introducción
+Trabajo practico de la materia lenguajes formales de la Facultad de Ingeniería Universidad de Buenos Aires
+La idea detrás de este proyecto es simular lo mas posible a una maquina Commodore 64 basic V2, utilizando programación funcional, en este caso, para cumplir esto ultimo se utiliza Clojure.
 
-Download from http://example.com/FIXME.
+## Tecnologías usadas
+- Clojure
 
-## Usage
+## Instalación
+Para instalar Clojure hay que seguir los pasos del siguiente video:
+https://www.youtube.com/watch?v=6uUynWkMDGM
+## Uso
+Después de clonar el repo o descargado el zip, es necesario abrir la terminal en la ruta del archivo.
+Para poder usar la aplicación hay que utilizar el siguiente comando:
+```
+lein run
+```
+El proyecto trae distintos programas ya armados para poder usar ( Aquellos archivos terminados en .BAS ).
+En caso de querer usarlos, ejecute el siguiente comando dentro del programa:
+```
+LOAD SINE.BAS
+RUN
+```
+Se puede utilizar cualquiera de los archivos .BAS agregados en el proyecto.
 
-FIXME: explanation
-
-    $ java -jar commodore-64-basic-v2-0.1.0-standalone.jar [args]
-
-## Options
-
-FIXME: listing of options this app accepts.
-
-## Examples
-
-...
-
-### Bugs
-
-...
-
-### Any Other Sections
-### That You Think
-### Might be Useful
-
-## License
-
-Copyright © 2023 FIXME
-
-This program and the accompanying materials are made available under the
-terms of the Eclipse Public License 2.0 which is available at
-http://www.eclipse.org/legal/epl-2.0.
-
-This Source Code may also be made available under the following Secondary
-Licenses when the conditions for such availability set forth in the Eclipse
-Public License, v. 2.0 are satisfied: GNU General Public License as published by
-the Free Software Foundation, either version 2 of the License, or (at your
-option) any later version, with the GNU Classpath Exception which is available
-at https://www.gnu.org/software/classpath/license.html.
+Por ultimo, también trae un pequeño set de pruebas unitarias y para poder utilizarlas, ejecute el siguiente comando:
+```
+lein test
+```
